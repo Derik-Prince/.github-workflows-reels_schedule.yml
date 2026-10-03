@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       target_lang:
-        description: 'Language to render (te, hi, en)'
+        description: 'Language (te, hi, en)'
         required: true
         default: 'te'
   schedule:
-    # 7:00 AM IST -> 1:30 AM UTC (Telugu)
+    # 7:00 AM IST (Telugu Reel)
     - cron: '30 1 * * *'
-    # 1:00 PM IST -> 7:30 AM UTC (Hindi)
+    # 1:00 PM IST (Hindi Reel)
     - cron: '30 7 * * *'
-    # 5:00 PM IST -> 11:30 AM UTC (English)
+    # 5:00 PM IST (English Reel)
     - cron: '30 11 * * *'
-    # Every 1 Hour comments auto-check
+    # Hourly DM Comment Trigger
     - cron: '0 * * * *'
 
 permissions:
@@ -43,6 +43,11 @@ jobs:
         run: |
           pip install "moviepy<2.0.0" requests edge-tts pillow==9.5.0 beautifulsoup4
 
+      - name: Auto-Discover and Select Trending Deal
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
+        run: |
+          python auto_deal_engine.py
+
       - name: Render Reel and Audio
         if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         env:
@@ -57,19 +62,13 @@ jobs:
         run: |
           LANG=$(cat current_lang.txt)
           VIDEO_FILE="reel_${LANG}.mp4"
-          
-          # Delete previous cache tag if present
           gh release delete v1.0-cache -y || true
           git tag -d v1.0-cache || true
           git push origin :refs/tags/v1.0-cache || true
-          
-          # Publish direct high-speed GitHub Release CDN asset
-          gh release create v1.0-cache "$VIDEO_FILE" --title "Reel Cache" --notes "Automated Reel Asset"
-          
+          gh release create v1.0-cache "$VIDEO_FILE" --title "Reel Cache" --notes "Auto Reel Asset"
           REPO_NAME="${{ github.repository }}"
           DOWNLOAD_URL="https://github.com/${REPO_NAME}/releases/download/v1.0-cache/${VIDEO_FILE}"
           echo "PUBLIC_URL=${DOWNLOAD_URL}" >> $GITHUB_ENV
-          echo "Direct GitHub CDN Video URL: ${DOWNLOAD_URL}"
 
       - name: Publish Reel to Instagram
         if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
@@ -86,3 +85,11 @@ jobs:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
         run: |
           python auto_dm_reply.py
+
+      - name: Auto-Commit State Rotation
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add current_deal_index.txt processed_comments.txt active_deal.json || true
+          git commit -m "Auto-Engine State Update [skip ci]" || true
+          git push || true
