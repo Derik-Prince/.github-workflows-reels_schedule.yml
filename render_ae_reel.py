@@ -35,20 +35,20 @@ else:
 
 TRIGGER_KEYWORD = PRODUCT["keyword"].upper()
 
-# 100% Policy-Safe Captions (ASCI & FTC Affiliate Rules Adherent)
+# 100% Policy-Safe Viral Hashtags & ASCI / FTC Disclosures
 LANG_CONFIG = {
     "te": {
         "voice": "te-IN-MohanNeural",
         "font": "Pragati Narrow",
         "hook": f"WAIT! SCROLL CHEYODDU! 🚨\nCOMMENT '{TRIGGER_KEYWORD}'",
-        "script": f"Rey scroll cheyadam ventane aapandi! Ee deal chusara? {PRODUCT['title']} meedha straight {PRODUCT['discount']} drop paddadi! Original price {PRODUCT['mrp']}, ippudu kevalam {PRODUCT['deal_price']} ke dorukuthondi. Stock ventane aipothundi, direct link mee DM lo ravalante kindha '{TRIGGER_KEYWORD}' ani comment cheyyandi!",
+        "script": f"Rey scroll cheyadam ventane aapandi! Ee deal chusara? {PRODUCT['title']} meedha straight {PRODUCT['discount']} drop paddadi! Original price {PRODUCT['mrp']}, ippudu kevalam {PRODUCT['deal_price']} ke dorukuthondi. Stock ventane aipothundi, direct link mee DM lo direct ga ravalante kindha '{TRIGGER_KEYWORD}' ani comment cheyyandi!",
         "caption": (
             f"🚨 STOP SCROLLING! UNREAL PRICE DROP! 🚨\n\n"
             f"⚡ {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Loot Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
             f"👉 Link mee DM lo direct ga ravalante kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi!\n\n"
-            f"⚠️ (Legal Affiliate Disclosure: As an affiliate partner, we may earn an affiliate commission on qualifying purchases at no extra cost to you.)\n\n"
+            f"⚠️ (Legal Affiliate Disclosure: As an affiliate partner, we earn an affiliate commission on qualifying purchases at no extra cost to you.)\n\n"
             f"#ad #affiliate #viralreels #telugureels #trendingreels #lootdeals #telugutech #amazonfinds #smartwatch #prucansales #trendingnow #explorepage #instadeals #reelsindia"
         )
     },
@@ -147,8 +147,7 @@ def post_reel_to_meta(video_url, caption):
         
     print(f"Reel container created: {creation_id}. Polling Meta video processing...")
     
-    # Official Meta Transcode verification loop
-    max_retries = 15
+    max_retries = 18
     for attempt in range(max_retries):
         time.sleep(10)
         status_url = f"https://graph.facebook.com/v26.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}"
