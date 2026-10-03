@@ -1,4 +1,4 @@
-name: Scheduled Reels Auto Poster
+name: Scheduled Reels Auto Poster & DM Bot
 
 on:
   workflow_dispatch:
@@ -14,12 +14,14 @@ on:
     - cron: '30 7 * * *'
     # 5:00 PM IST -> 11:30 AM UTC (English)
     - cron: '30 11 * * *'
+    # Every 1 Hour comments auto-check chesthundi
+    - cron: '0 * * * *'
 
 permissions:
   contents: write
 
 jobs:
-  render_and_post:
+  run_automation:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -29,7 +31,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg imagemagick curl
-          # Fix ImageMagick security policy
           sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<!-- <policy domain="path" rights="none" pattern="@\*" -->/' /etc/ImageMagick-6/policy.xml || true
           sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<!-- <policy domain="path" rights="none" pattern="@\*" -->/' /etc/ImageMagick-7/policy.xml || true
 
@@ -40,17 +41,17 @@ jobs:
 
       - name: Install Python Packages
         run: |
-          pip install requests edge-tts moviepy pillow beautifulsoup4
+          pip install "moviepy<2.0.0" requests edge-tts pillow==9.5.0 beautifulsoup4
 
       - name: Render Reel and Audio
-        id: render
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         env:
           TARGET_LANG: ${{ github.event.inputs.target_lang }}
         run: |
           python render_ae_reel.py --render-only
 
       - name: Upload Video to Temporary Public URL
-        id: upload_video
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         run: |
           LANG=$(cat current_lang.txt)
           VIDEO_FILE="reel_${LANG}.mp4"
@@ -58,10 +59,18 @@ jobs:
           echo "PUBLIC_URL=${DOWNLOAD_URL}" >> $GITHUB_ENV
           echo "Public Video Link: ${DOWNLOAD_URL}"
 
-      - name: Publish to Instagram
+      - name: Publish Reel to Instagram
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           VIDEO_PUBLIC_URL: ${{ env.PUBLIC_URL }}
         run: |
           python render_ae_reel.py --publish-only
+
+      - name: Check Comments and Send DMs
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: |
+          python auto_dm_reply.py
