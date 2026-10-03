@@ -1,60 +1,86 @@
 import os
+import sys
 import json
 import requests
 
-IG_USER_ID = os.getenv("IG_USER_ID")
+IG_USER_ID = (os.getenv("IG_USER_ID") or "17841417494301577").strip()
 ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
 
 with open("products.json", "r", encoding="utf-8") as f:
     PRODUCTS_LIST = json.load(f)
 
-# Keyword ki aa specific product ni match chesthundhi
-KEYWORD_PRODUCT_MAP = {p["keyword"].upper(): p for p in PRODUCTS_LIST}
+PRODUCT = PRODUCTS_LIST[0]
+TRIGGER_KEYWORD = PRODUCT.get("keyword", "WATCH").strip().upper()
+AFFILIATE_LINK = PRODUCT.get("affiliate_link", "https://amzn.to/example")
 
-def get_recent_reels():
+def get_recent_media():
     url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}/media?fields=id,caption&limit=5&access_token={ACCESS_TOKEN}"
     res = requests.get(url).json()
     return res.get("data", [])
 
-def check_and_send_dms(media_id):
-    comments_url = f"https://graph.facebook.com/v26.0/{media_id}/comments?fields=id,text,from,username&access_token={ACCESS_TOKEN}"
-    res = requests.get(comments_url).json()
-    comments = res.get("data", [])
+def get_comments_for_media(media_id):
+    url = f"https://graph.facebook.com/v26.0/{media_id}/comments?fields=id,text,from,timestamp&access_token={ACCESS_TOKEN}"
+    res = requests.get(url).json()
+    return res.get("data", [])
 
-    for comment in comments:
-        comment_id = comment["id"]
-        comment_text = comment.get("text", "").upper().strip()
-        username = comment.get("username", "there")
+def send_private_reply(comment_id, message_text):
+    # Meta Instagram Graph API endpoint for replying directly to a comment via DM
+    url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}/messages"
+    payload = {
+        "recipient": {"comment_id": comment_id},
+        "message": {"text": message_text},
+        "access_token": ACCESS_TOKEN
+    }
+    res = requests.post(url, json=payload).json()
+    return res
 
-        for keyword, prod in KEYWORD_PRODUCT_MAP.items():
-            if keyword in comment_text:
-                print(f"Matched keyword '{keyword}' from @{username}")
+def process_automated_dms():
+    print(f"Checking recent posts for trigger keyword: '{TRIGGER_KEYWORD}'...")
+    media_list = get_recent_media()
+    
+    if not media_list:
+        print("No recent media posts found.")
+        return
 
-                # 1. 100% Free Meta Official Private Reply (DM Send)
-                dm_url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}/messages"
-                dm_payload = {
-                    "recipient": {"comment_id": comment_id},
-                    "message": {
-                        "text": f"Hey @{username}! 🔥\n\nNuvvu adigina '{prod['title']}' deal link idhi:\n👉 {prod['affiliate_link']}\n\nFast ga chudu bro, stock limit lo undi!"
-                    },
-                    "access_token": ACCESS_TOKEN
-                }
-                dm_res = requests.post(dm_url, json=dm_payload).json()
-                print("DM Status:", dm_res)
+    processed_file = "processed_comments.txt"
+    processed_ids = set()
+    if os.path.exists(processed_file):
+        with open(processed_file, "r") as f:
+            processed_ids = set(line.strip() for line in f)
 
-                # 2. Public comment ki reply
-                reply_url = f"https://graph.facebook.com/v26.0/{comment_id}/replies"
-                requests.post(reply_url, data={
-                    "message": f"@{username} Bro, check your DM for the deal link! 📩",
-                    "access_token": ACCESS_TOKEN
-                })
-                break
+    new_processed = []
+
+    for media in media_list:
+        media_id = media["id"]
+        comments = get_comments_for_media(media_id)
+        
+        for comment in comments:
+            c_id = comment["id"]
+            c_text = comment.get("text", "").strip().upper()
+            
+            if c_id in processed_ids:
+                continue
+                
+            if TRIGGER_KEYWORD in c_text:
+                print(f"Keyword matched in comment: '{comment.get('text')}' by {comment.get('from', {}).get('username')}")
+                
+                dm_body = (
+                    f"Hello! 👋 Here is your direct discount link for the {PRODUCT['title']}:\n\n"
+                    f"🔗 Buy Link: {AFFILIATE_LINK}\n\n"
+                    f"(Limited stock deal. Affiliate partnership disclosure included.)"
+                )
+                
+                result = send_private_reply(c_id, dm_body)
+                print(f"DM Response for comment {c_id}:", result)
+                new_processed.append(c_id)
+
+    if new_processed:
+        with open(processed_file, "a") as f:
+            for item in new_processed:
+                f.write(f"{item}\n")
+        print(f"Successfully replied to {len(new_processed)} new comments!")
+    else:
+        print("No new comments matching the keyword.")
 
 if __name__ == "__main__":
-    reels = get_recent_reels()
-    if reels:
-        for reel in reels:
-            print(f"Scanning Reel ID: {reel['id']}")
-            check_and_send_dms(reel["id"])
-    else:
-        print("Reels dhorakaledhu.")
+    process_automated_dms()
