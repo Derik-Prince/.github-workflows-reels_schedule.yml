@@ -11,7 +11,6 @@ from moviepy.editor import (
     ColorClip
 )
 
-# Secrets unte theesukuntundi, lekapothe hardcoded fallback ID vaduthundi (Crash avvakunda)
 IG_USER_ID = (os.getenv("IG_USER_ID") or "17841417494301577").strip()
 ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
 
@@ -36,20 +35,20 @@ else:
 
 TRIGGER_KEYWORD = PRODUCT["keyword"].upper()
 
-# Legal Disclosures + Viral Hashtags + Scroll-Stopping Hook
+# 100% Policy-Safe Captions (ASCI & FTC Affiliate Rules Adherent)
 LANG_CONFIG = {
     "te": {
         "voice": "te-IN-MohanNeural",
         "font": "Pragati Narrow",
         "hook": f"WAIT! SCROLL CHEYODDU! 🚨\nCOMMENT '{TRIGGER_KEYWORD}'",
-        "script": f"Rey scroll cheyadam ventane aapandi! Ee deal chusara? {PRODUCT['title']} meedha straight {PRODUCT['discount']} drop paddadi! Original price {PRODUCT['mrp']}, ippudu kevalam {PRODUCT['deal_price']} ke dorukuthondi. Stock ventane aipothundi, direct link mee DM lo direct ga ravalante kindha '{TRIGGER_KEYWORD}' ani ippude comment cheyyandi!",
+        "script": f"Rey scroll cheyadam ventane aapandi! Ee deal chusara? {PRODUCT['title']} meedha straight {PRODUCT['discount']} drop paddadi! Original price {PRODUCT['mrp']}, ippudu kevalam {PRODUCT['deal_price']} ke dorukuthondi. Stock ventane aipothundi, direct link mee DM lo ravalante kindha '{TRIGGER_KEYWORD}' ani comment cheyyandi!",
         "caption": (
             f"🚨 STOP SCROLLING! UNREAL PRICE DROP! 🚨\n\n"
             f"⚡ {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Loot Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
             f"👉 Link mee DM lo direct ga ravalante kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi!\n\n"
-            f"⚠️ (Legal Affiliate Disclosure: As an affiliate partner, we may earn a commission on qualifying purchases at no extra cost to you.)\n\n"
+            f"⚠️ (Legal Affiliate Disclosure: As an affiliate partner, we may earn an affiliate commission on qualifying purchases at no extra cost to you.)\n\n"
             f"#ad #affiliate #viralreels #telugureels #trendingreels #lootdeals #telugutech #amazonfinds #smartwatch #prucansales #trendingnow #explorepage #instadeals #reelsindia"
         )
     },
@@ -131,10 +130,8 @@ def build_cinematic_reel(lang, audio_path, image_path, output_video):
     )
 
 def post_reel_to_meta(video_url, caption):
-    # Fail-safe IG_USER_ID verification
-    target_account_id = IG_USER_ID if IG_USER_ID else "17841417494301577"
-    base_url = f"https://graph.facebook.com/v26.0/{target_account_id}"
-    print(f"Creating Reel container for account [{target_account_id}] with video: {video_url}")
+    base_url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}"
+    print(f"Creating Reel container for: {video_url}")
     
     res = requests.post(f"{base_url}/media", data={
         "media_type": "REELS",
@@ -148,14 +145,36 @@ def post_reel_to_meta(video_url, caption):
         print("Reel Creation Failed:", res)
         sys.exit(1)
         
-    print(f"Reel container created: {creation_id}. Waiting for Meta transcoding...")
-    time.sleep(45)
+    print(f"Reel container created: {creation_id}. Polling Meta video processing...")
     
+    # Official Meta Transcode verification loop
+    max_retries = 15
+    for attempt in range(max_retries):
+        time.sleep(10)
+        status_url = f"https://graph.facebook.com/v26.0/{creation_id}?fields=status_code&access_token={ACCESS_TOKEN}"
+        st_res = requests.get(status_url).json()
+        status_code = st_res.get("status_code")
+        print(f"Meta Transcode Status ({attempt+1}/{max_retries}): {status_code}")
+        
+        if status_code == "FINISHED":
+            break
+        elif status_code == "ERROR":
+            print("Meta Transcoding Error:", st_res)
+            sys.exit(1)
+        elif attempt == max_retries - 1:
+            print("Processing timeout reached.")
+
     pub = requests.post(f"{base_url}/media_publish", data={
         "creation_id": creation_id,
         "access_token": ACCESS_TOKEN
     }).json()
-    print("Reel is live on Instagram! Post ID:", pub.get("id"))
+    
+    post_id = pub.get("id")
+    if post_id:
+        print("🎉 SUCCESS! Reel is live on Instagram! Post ID:", post_id)
+    else:
+        print("Failed to publish Reel:", pub)
+        sys.exit(1)
 
 async def render_flow():
     with open("current_lang.txt", "w") as f:
