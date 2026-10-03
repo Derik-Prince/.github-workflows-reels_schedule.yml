@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import json
 import asyncio
 import datetime
 import requests
@@ -12,6 +13,12 @@ from moviepy.editor import (
 
 IG_USER_ID = os.getenv("IG_USER_ID")
 ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
+
+with open("products.json", "r", encoding="utf-8") as f:
+    PRODUCTS_LIST = json.load(f)
+
+# Eeroju active product (First item)
+PRODUCT = PRODUCTS_LIST[0]
 
 target_input = os.getenv("TARGET_LANG")
 if target_input in ["te", "hi", "en"]:
@@ -27,35 +34,29 @@ else:
     else:
         ACTIVE_LANG = "te"
 
-PRODUCT = {
-    "title": "Noise Smart Watch Ultra",
-    "deal_price": "₹1,499",
-    "mrp": "₹4,999",
-    "discount": "70% OFF",
-    "image_url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1080"
-}
+TRIGGER_KEYWORD = PRODUCT["keyword"].upper()
 
 LANG_CONFIG = {
     "te": {
         "voice": "te-IN-MohanNeural",
         "font": "Pragati Narrow",
-        "hook": "WAIT! EE LOOT DEAL MISS AVVADDU!",
-        "script": f"Rey aagandi! Ee deal chusara? {PRODUCT['title']} meedha straight 70% off nadusthondi! Original MRP {PRODUCT['mrp']}, ippudu kevalam {PRODUCT['deal_price']} ke vasthondi. Stock thondaraga aipothundi, buy link bio lo undi ventane order cheyyandi!",
-        "caption": f"🔥 UNREAL DEAL ALERT! 🔥\n\n{PRODUCT['title']}\nOffer Price: {PRODUCT['deal_price']} (MRP: {PRODUCT['mrp']})\nDiscount: {PRODUCT['discount']}\n\n👉 Bio lo link undi grab cheyandi!\n#prucansales #telugudeals #lootdeals #offers"
+        "hook": f"WAIT! COMMENT '{TRIGGER_KEYWORD}' FOR LINK!",
+        "script": f"Rey aagandi! Ee deal chusara? {PRODUCT['title']} meedha straight {PRODUCT['discount']} discount undi! Kevalam {PRODUCT['deal_price']} ke vasthondi. Direct buy link mee DM lo direct ga ravalante kinda '{TRIGGER_KEYWORD}' ani comment cheyyandi!",
+        "caption": f"🔥 UNREAL DEAL ALERT! 🔥\n\n{PRODUCT['title']}\nOffer Price: {PRODUCT['deal_price']} (MRP: {PRODUCT['mrp']})\nDiscount: {PRODUCT['discount']}\n\n👉 Comment \"{TRIGGER_KEYWORD}\" to get the link in your DM! 📩\n\n#prucansales #telugudeals #lootdeals #offers"
     },
     "hi": {
         "voice": "hi-IN-MadhurNeural",
         "font": "Poppins-Black",
-        "hook": "RUKO! YEH DEAL MISS MAT KARNA!",
-        "script": f"Rukiye dosto! Loot offer aa chuka hai! {PRODUCT['title']} par flat 70% discount chal raha hai. {PRODUCT['mrp']} ka product sirf {PRODUCT['deal_price']} me mil raha hai. Link bio me hai, abhi order karein!",
-        "caption": f"🔥 CRAZY DISCOUNT TODAY! 🔥\n\n{PRODUCT['title']}\nDeal Price: {PRODUCT['deal_price']} (MRP: {PRODUCT['mrp']})\nDiscount: {PRODUCT['discount']}\n\n👉 Link in Bio!\n#deals #prucansales #amazonoffers #bestprice"
+        "hook": f"RUKO! COMMENT '{TRIGGER_KEYWORD}' FOR LINK!",
+        "script": f"Rukiye dosto! Loot offer aa chuka hai! {PRODUCT['title']} par flat {PRODUCT['discount']} chal raha hai. Buy link ke liye niche '{TRIGGER_KEYWORD}' comment karein!",
+        "caption": f"🔥 CRAZY DISCOUNT TODAY! 🔥\n\n{PRODUCT['title']}\nDeal Price: {PRODUCT['deal_price']} (MRP: {PRODUCT['mrp']})\nDiscount: {PRODUCT['discount']}\n\n👉 Comment \"{TRIGGER_KEYWORD}\" for direct link in your DM! 📩\n\n#deals #prucansales #amazonoffers #bestprice"
     },
     "en": {
         "voice": "en-IN-PrabhatNeural",
         "font": "Poppins-Black",
-        "hook": "STOP SCROLLING! HUGE DROP!",
-        "script": f"Stop scrolling right now! Huge price drop on {PRODUCT['title']}. It is currently selling at flat 70% discount for just {PRODUCT['deal_price']}, down from {PRODUCT['mrp']}. Limited stock available, link in bio!",
-        "caption": f"🔥 MASSIVE PRICE DROP ALERT! 🔥\n\n{PRODUCT['title']}\nDeal Price: {PRODUCT['deal_price']} (MRP: {PRODUCT['mrp']})\nDiscount: {PRODUCT['discount']}\n\n👉 Click link in Bio to buy now!\n#deals #prucansales #techdeals #stealdeals"
+        "hook": f"STOP! COMMENT '{TRIGGER_KEYWORD}' FOR LINK!",
+        "script": f"Stop scrolling right now! Huge price drop on {PRODUCT['title']}. Get it now for {PRODUCT['deal_price']} at {PRODUCT['discount']}. Comment '{TRIGGER_KEYWORD}' right now to get the link sent directly to your DM!",
+        "caption": f"🔥 MASSIVE PRICE DROP ALERT! 🔥\n\n{PRODUCT['title']}\nDeal Price: {PRODUCT['deal_price']} (MRP: {PRODUCT['mrp']})\nDiscount: {PRODUCT['discount']}\n\n👉 Comment \"{TRIGGER_KEYWORD}\" to get the link in DM! 📩\n\n#deals #prucansales #techdeals #stealdeals"
     }
 }
 
@@ -83,11 +84,11 @@ def build_cinematic_reel(lang, audio_path, image_path, output_video):
     badge_bg = ColorClip(size=(600, 110), color=(255, 30, 80), duration=duration).set_position(('center', 180))
     badge_text = TextClip(f"⚡ {PRODUCT['discount']} ⚡", fontsize=60, color='white', font='Poppins-Black', size=(600, 110), method='caption').set_position(('center', 180)).set_duration(duration)
 
-    hook_text = TextClip(cfg["hook"], fontsize=54, color='yellow', font=cfg["font"], size=(980, None), method='caption').set_position(('center', 320)).set_duration(min(duration, 3.5))
+    hook_text = TextClip(cfg["hook"], fontsize=48, color='yellow', font=cfg["font"], size=(980, None), method='caption').set_position(('center', 320)).set_duration(min(duration, 3.5))
 
     price_box = TextClip(f"PRICE: {PRODUCT['deal_price']}  |  MRP: {PRODUCT['mrp']}", fontsize=54, color='#00FFAA', font='Poppins-Black', size=(950, None), method='caption').set_position(('center', 1520)).set_duration(duration)
 
-    cta_box = TextClip("👉 CHECK LINK IN BIO TO BUY 👈", fontsize=44, color='white', font='Poppins-Black', size=(900, None), method='caption').set_position(('center', 1660)).set_duration(duration)
+    cta_box = TextClip(f"👉 COMMENT '{TRIGGER_KEYWORD}' FOR LINK 👈", fontsize=40, color='white', font='Poppins-Black', size=(950, None), method='caption').set_position(('center', 1660)).set_duration(duration)
 
     final_video = CompositeVideoClip(
         [canvas, img_clip, badge_bg, badge_text, hook_text, price_box, cta_box],
@@ -95,18 +96,11 @@ def build_cinematic_reel(lang, audio_path, image_path, output_video):
     ).set_duration(duration)
 
     final_video = final_video.set_audio(audio)
-    final_video.write_videofile(
-        output_video,
-        fps=30,
-        codec="libx264",
-        audio_codec="aac",
-        threads=4,
-        preset="fast"
-    )
+    final_video.write_videofile(output_video, fps=30, codec="libx264", audio_codec="aac", threads=4, preset="fast")
 
 def post_reel_to_meta(video_url, caption):
     base_url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}"
-    print(f"Creating Reel container for URL: {video_url}")
+    print(f"Creating Reel container for: {video_url}")
     
     res = requests.post(f"{base_url}/media", data={
         "media_type": "REELS",
@@ -120,14 +114,14 @@ def post_reel_to_meta(video_url, caption):
         print("Reel Creation Failed:", res)
         sys.exit(1)
         
-    print(f"Container created ID: {creation_id}. Waiting for Meta transcode...")
-    time.sleep(40)
+    print(f"Processing Reel... Container ID: {creation_id}")
+    time.sleep(45)
     
     pub = requests.post(f"{base_url}/media_publish", data={
         "creation_id": creation_id,
         "access_token": ACCESS_TOKEN
     }).json()
-    print("Reel Live ID:", pub.get("id"))
+    print("Reel successfully published! Live ID:", pub.get("id"))
 
 async def render_flow():
     with open("current_lang.txt", "w") as f:
@@ -140,7 +134,7 @@ async def render_flow():
     download_image(PRODUCT["image_url"], img_file)
     await generate_voiceover(LANG_CONFIG[ACTIVE_LANG]["script"], LANG_CONFIG[ACTIVE_LANG]["voice"], audio_file)
     build_cinematic_reel(ACTIVE_LANG, audio_file, img_file, video_file)
-    print(f"Rendering Finished: {video_file}")
+    print(f"Done rendering: {video_file}")
 
 def publish_flow():
     with open("current_lang.txt", "r") as f:
