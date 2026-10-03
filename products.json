@@ -1,0 +1,22 @@
+[
+  {
+    "id": "prod_01",
+    "keyword": "WATCH",
+    "title": "Noise Smart Watch Ultra",
+    "deal_price": "₹1,499",
+    "mrp": "₹4,999",
+    "discount": "70% OFF",
+    "image_url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=1080",
+    "affiliate_link": "https://amzn.to/example-smartwatch-deal"
+  },
+  {
+    "id": "prod_02",
+    "keyword": "BUDS",
+    "title": "OnePlus Nord Wireless Earbuds",
+    "deal_price": "₹1,999",
+    "mrp": "₹4,999",
+    "discount": "60% OFF",
+    "image_url": "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=1080",
+    "affiliate_link": "https://amzn.to/example-earbuds-deal"
+  }
+]
