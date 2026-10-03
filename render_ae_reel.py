@@ -11,7 +11,8 @@ from moviepy.editor import (
     ColorClip
 )
 
-IG_USER_ID = os.getenv("IG_USER_ID")
+# Secrets unte theesukuntundi, lekapothe hardcoded fallback ID vaduthundi (Crash avvakunda)
+IG_USER_ID = (os.getenv("IG_USER_ID") or "17841417494301577").strip()
 ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
 
 with open("products.json", "r", encoding="utf-8") as f:
@@ -35,7 +36,7 @@ else:
 
 TRIGGER_KEYWORD = PRODUCT["keyword"].upper()
 
-# High-Retention Scroll-Stopping Scripts & Algorithm-Boosted Viral Hashtags
+# Legal Disclosures + Viral Hashtags + Scroll-Stopping Hook
 LANG_CONFIG = {
     "te": {
         "voice": "te-IN-MohanNeural",
@@ -98,26 +99,20 @@ def build_cinematic_reel(lang, audio_path, image_path, output_video):
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
-    # 1. Dark Gradient Canvas (9:16 vertical ratio)
     canvas = ColorClip(size=(1080, 1920), color=(10, 10, 12), duration=duration)
 
-    # 2. Cinematic Dynamic Ken-Burns Zoom
     img_clip = ImageClip(image_path).set_duration(duration)
     img_clip = img_clip.resize(height=1050)
     img_clip = img_clip.resize(lambda t: 1 + 0.08 * (t / duration))
     img_clip = img_clip.set_position(('center', 420))
 
-    # 3. Punchy Loot Badge
     badge_bg = ColorClip(size=(640, 115), color=(255, 0, 70), duration=duration).set_position(('center', 160))
     badge_text = TextClip(f"🔥 {PRODUCT['discount']} LIMITED LOOT 🔥", fontsize=44, color='white', font='Poppins-Black', size=(640, 115), method='caption').set_position(('center', 160)).set_duration(duration)
 
-    # 4. Attention-Grabbing Hook
     hook_text = TextClip(cfg["hook"], fontsize=48, color='#FFE600', font=cfg["font"], size=(980, None), method='caption').set_position(('center', 290)).set_duration(min(duration, 3.8))
 
-    # 5. Contrast Deal Price Box
     price_box = TextClip(f"PRICE: {PRODUCT['deal_price']}   MRP: {PRODUCT['mrp']}", fontsize=54, color='#00FFCC', font='Poppins-Black', size=(960, None), method='caption').set_position(('center', 1510)).set_duration(duration)
 
-    # 6. Pulsing Call-To-Action (Comment to get DM)
     cta_box = TextClip(f"👇 COMMENT '{TRIGGER_KEYWORD}' FOR DIRECT LINK 👇", fontsize=42, color='#FFFFFF', font='Poppins-Black', size=(960, None), method='caption').set_position(('center', 1660)).set_duration(duration)
 
     final_video = CompositeVideoClip(
@@ -136,8 +131,10 @@ def build_cinematic_reel(lang, audio_path, image_path, output_video):
     )
 
 def post_reel_to_meta(video_url, caption):
-    base_url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}"
-    print(f"Creating Reel container for: {video_url}")
+    # Fail-safe IG_USER_ID verification
+    target_account_id = IG_USER_ID if IG_USER_ID else "17841417494301577"
+    base_url = f"https://graph.facebook.com/v26.0/{target_account_id}"
+    print(f"Creating Reel container for account [{target_account_id}] with video: {video_url}")
     
     res = requests.post(f"{base_url}/media", data={
         "media_type": "REELS",
