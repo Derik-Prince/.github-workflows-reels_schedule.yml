@@ -4,6 +4,7 @@ import time
 import json
 import asyncio
 import datetime
+import subprocess
 import requests
 import edge_tts
 from moviepy.editor import (
@@ -54,7 +55,7 @@ LANG_CONFIG = {
             f"⚡ {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
-            f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
+            f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" అని comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
             f"⚠️ (Legal Affiliate Disclosure: As an Amazon Associate, we earn from qualifying purchases at no additional cost to you.)\n\n"
             f"#ad #affiliate #telugureels #telugutech #lootdeals #amazonfinds #techgadgets #viralreels #explorepage #instadeals"
         )
@@ -111,42 +112,47 @@ async def generate_voiceover(text, voice_name, rate, pitch, output_path):
     communicate = edge_tts.Communicate(text, voice_name, rate=rate, pitch=pitch)
     await communicate.save(output_path)
 
-def download_file(url, save_path):
-    res = requests.get(url, stream=True, timeout=30)
-    with open(save_path, 'wb') as f:
-        for chunk in res.iter_content(chunk_size=8192):
-            if chunk:
-                f.write(chunk)
+def download_video_file(url, save_path):
+    # Curl with browser user-agent avoids bot blocks
+    cmd = [
+        "curl", "-L", "-A",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "-o", save_path, url
+    ]
+    subprocess.run(cmd, check=True)
 
 def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
     cfg = LANG_CONFIG[lang]
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
-    source_clip = VideoFileClip(raw_video_path)
-    if source_clip.duration < duration:
-        loops_needed = int(duration / source_clip.duration) + 1
-        from moviepy.editor import concatenate_videoclips
-        source_clip = concatenate_videoclips([source_clip] * loops_needed)
+    try:
+        source_clip = VideoFileClip(raw_video_path)
+        if source_clip.duration < duration:
+            loops_needed = int(duration / source_clip.duration) + 1
+            from moviepy.editor import concatenate_videoclips
+            source_clip = concatenate_videoclips([source_clip] * loops_needed)
+        source_clip = source_clip.subclip(0, duration)
         
-    source_clip = source_clip.subclip(0, duration)
-    
-    # 9:16 Vertical Smart Crop
-    w, h = source_clip.size
-    target_aspect = 1080 / 1920
-    if (w / h) > target_aspect:
-        new_w = int(h * target_aspect)
-        bg_video = source_clip.crop(x1=(w - new_w)/2, x2=(w + new_w)/2, y1=0, y2=h)
-    else:
-        new_h = int(w / target_aspect)
-        bg_video = source_clip.crop(y1=(h - new_h)/2, y2=(h + new_h)/2, x1=0, x2=w)
-    bg_video = bg_video.resize((1080, 1920))
+        # 9:16 Vertical Smart Crop
+        w, h = source_clip.size
+        target_aspect = 1080 / 1920
+        if (w / h) > target_aspect:
+            new_w = int(h * target_aspect)
+            bg_video = source_clip.crop(x1=(w - new_w)/2, x2=(w + new_w)/2, y1=0, y2=h)
+        else:
+            new_h = int(w / target_aspect)
+            bg_video = source_clip.crop(y1=(h - new_h)/2, y2=(h + new_h)/2, x1=0, x2=w)
+        bg_video = bg_video.resize((1080, 1920))
+    except Exception as e:
+        print(f"Fallback to studio canvas due to video read error: {e}")
+        bg_video = ColorClip(size=(1080, 1920), color=(14, 16, 22), duration=duration)
 
-    # Shadows
+    # Gradients for text contrast
     top_vignette = ColorClip(size=(1080, 480), color=(0, 0, 0), duration=duration).set_opacity(0.45).set_position(('center', 0))
     bottom_vignette = ColorClip(size=(1080, 680), color=(0, 0, 0), duration=duration).set_opacity(0.60).set_position(('center', 1240))
 
-    # Deal Badge (Top)
+    # Top Deal Badge Banner
     badge_bg = ColorClip(size=(740, 110), color=(255, 10, 84), duration=duration).set_position(('center', 140))
     badge_text = TextClip(
         f"🔥 {PRODUCT.get('discount', 'LIMITED DEAL')} FLASH SALE 🔥",
@@ -157,7 +163,7 @@ def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
         method='caption'
     ).set_position(('center', 140)).set_duration(duration)
 
-    # Dynamic Words Sync (Subtitles typing flash)
+    # Dynamic 3-5 Words Synced Captions (Alex Hormozi Style)
     words = cfg["script"].split()
     chunk_size = 4
     word_chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
@@ -180,7 +186,7 @@ def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
         chunk_composite = chunk_composite.set_start(st).set_position(('center', 1330))
         animated_caption_clips.append(chunk_composite)
 
-    # Action Bar
+    # Action Bar (CTA)
     cta_bar = ColorClip(size=(1000, 120), color=(0, 122, 255), duration=duration).set_position(('center', 1660))
     cta_text = TextClip(
         f"👇 COMMENT '{TRIGGER_KEYWORD}' FOR DIRECT LINK 👇",
@@ -251,7 +257,7 @@ async def render_flow():
     raw_video = "source_video.mp4"
     video_file = f"reel_{ACTIVE_LANG}.mp4"
 
-    download_file(PRODUCT["video_url"], raw_video)
+    download_video_file(PRODUCT["video_url"], raw_video)
     cfg = LANG_CONFIG[ACTIVE_LANG]
     await generate_voiceover(cfg["script"], cfg["voice"], cfg["rate"], cfg["pitch"], audio_file)
     build_cinematic_reel(ACTIVE_LANG, audio_file, raw_video, video_file)
