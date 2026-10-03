@@ -7,7 +7,7 @@ import datetime
 import requests
 import edge_tts
 from moviepy.editor import (
-    ImageClip, AudioFileClip, CompositeVideoClip, TextClip,
+    VideoFileClip, AudioFileClip, CompositeVideoClip, TextClip,
     ColorClip
 )
 
@@ -35,31 +35,29 @@ else:
 
 TRIGGER_KEYWORD = PRODUCT.get("keyword", "DEAL").upper()
 
-# Humanized Conversational Scripts with Phonetic Clarity (Zero Robotic Accent)
 LANG_CONFIG = {
     "te": {
         "voice": "te-IN-MohanNeural",
         "font": "Pragati Narrow",
         "rate": "+5%",
         "pitch": "+0Hz",
-        "hook": f"ఒక్క నిమిషం! SCROLL CHEYODDU! 🚨\nకామెంట్ చేయండి '{TRIGGER_KEYWORD}'",
-        # Pure natural Telugu conversational tone with spelled-out pricing to avoid robotic numbers
+        "hook": f"WAIT! SCROLL CHEYODDU! 🚨\nCOMMENT '{TRIGGER_KEYWORD}'",
         "script": (
             f"ఒక్క సెకండ్ ఆగండి బ్రో! ఈ క్రేజీ డీల్ చూసారా? "
-            f"మార్కెట్ లో బాగా ట్రెండ్ అవుతున్న స్మార్ట్ వాచ్ మీద ఏకంగా డెబ్బై శాతం భారీ డిస్కౌంట్ పడింది! "
-            f"నాలుగు వేల తొమ్మిది వందలు ఉండే వాచ్, ఇప్పుడు ఆఫర్ లో కేవలం పదిహేను వందల రూపాయలకే వస్తోంది. "
+            f"స్మార్ట్ వాచ్ మీద ఏకంగా డెబ్బై శాతం భారీ డిస్కౌంట్ పడింది! "
+            f"నాలుగు వేల తొమ్మిది వందలు ఉండే వాచ్, ఇప్పుడు కేవలం పదిహేను వందల రూపాయలకే వస్తోంది. "
             f"ప్రీమియం డిస్ప్లే, సూపర్ బ్యాటరీ లైఫ్ ఉంటుంది. "
-            f"స్టాక్ అయిపోకముందే డైరెక్ట్ సీక్రెట్ లింక్ మీ ఇన్ బాక్స్ లో రావాలంటే, "
-            f"కింద కామెంట్స్ లో వాచ్ అని టైప్ చేయండి! డైరెక్ట్ డీల్ లింక్ వెంటనే మీ ఇన్ బాక్స్ కి వస్తుంది!"
+            f"డైరెక్ట్ సీక్రెట్ లింక్ మీ ఇన్ బాక్స్ లో రావాలంటే, "
+            f"కింద కామెంట్స్ లో వాచ్ అని టైప్ చేయండి!"
         ),
         "caption": (
             f"🚨 STOP SCROLLING! CRAZIEST TECH LOOT TODAY! 🚨\n\n"
             f"⚡ {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
-            f"👉 డైరెక్ట్ బై లింక్ కోసం కింద \"{TRIGGER_KEYWORD}\" అని కామెంట్ చేయండి! Direct link instant ga mee DM lo vasthundi! 📩\n\n"
-            f"⚠️ (Legal Affiliate Disclosure: As an Amazon/Affiliate associate, we earn from qualifying purchases at no extra cost to you.)\n\n"
-            f"#ad #affiliate #telugureels #telugutech #lootdeals #techreels #smartwatch #amazonfinds #viralreels #explorepage #instadeals #trendingnow"
+            f"👉 Direct link mee DM lo ravalante kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi! 📩\n\n"
+            f"⚠️ (Legal Affiliate Disclosure: As an Amazon Associate, we earn from qualifying purchases at no extra cost to you.)\n\n"
+            f"#ad #affiliate #telugureels #telugutech #lootdeals #techreels #smartwatch #amazonfinds #viralreels #explorepage #instadeals"
         )
     },
     "hi": {
@@ -68,23 +66,21 @@ LANG_CONFIG = {
         "rate": "+6%",
         "pitch": "+0Hz",
         "hook": f"RUKO! SCROLL BAND KARO! 🚨\nCOMMENT '{TRIGGER_KEYWORD}'",
-        # Fluent Hindi Creator Hinglish tone
         "script": (
             f"Rukiye dosto, ek second ke liye scroll band kijiye! Aaj ka sabse bada loot offer aa chuka hai. "
             f"Is premium smartwatch par pure sattar percent ka flat discount mil raha hai! "
-            f"Paanch hazar wali watch abhi sale mein sirf pandrah sau rupaye mein mil rahi hai. "
-            f"Aisa price drop baar baar nahi aata. "
-            f"Agar aapko direct buy link chahiye, toh niche comment box mein watch comment kijiye, "
-            f"turant aapke DM mein verified loot link bhej diya jayega!"
+            f"Paanch hazar wali watch abhi sirf pandrah sau rupaye mein mil rahi hai. "
+            f"Direct loot link ke liye niche watch comment kijiye, "
+            f"turant aapke DM mein link aa jayega!"
         ),
         "caption": (
             f"🚨 STOP SCROLLING! BIGGEST LOOT TODAY! 🚨\n\n"
             f"⚡ {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
-            f"👉 Niche \"{TRIGGER_KEYWORD}\" comment karein! Instant link direct aapke DM mein aayega! 📩\n\n"
+            f"👉 Niche \"{TRIGGER_KEYWORD}\" comment karein! Instant link DM me aayega! 📩\n\n"
             f"⚠️ (Affiliate Disclosure: Paid partnership / As an affiliate associate, we earn from qualifying purchases.)\n\n"
-            f"#ad #affiliate #hindideals #techdeals #lootlootloot #amazonfinds #smartwatch #viralreels #explorepage #reelsindia #trendingreels"
+            f"#ad #affiliate #hindideals #techdeals #lootlootloot #amazonfinds #smartwatch #viralreels #explorepage #reelsindia"
         )
     },
     "en": {
@@ -93,23 +89,21 @@ LANG_CONFIG = {
         "rate": "+8%",
         "pitch": "+0Hz",
         "hook": f"WAIT! STOP SCROLLING! 🚨\nCOMMENT '{TRIGGER_KEYWORD}'",
-        # Crisp Indian-English natural tech influencer voice
         "script": (
-            f"Hold on! Stop scrolling right now! You definitely don't want to miss this insane price drop. "
-            f"This best-selling smartwatch is currently running on a massive seventy percent discount! "
-            f"Originally priced at five thousand rupees, it's now available for just fifteen hundred rupees during this flash sale. "
-            f"Premium build, crisp display, and incredible battery life. "
-            f"Stocks are selling out super fast, so comment watch right below, "
-            f"and we will drop the direct official link straight to your inbox!"
+            f"Hold on! Stop scrolling right now! You definitely don't want to miss this deal. "
+            f"This best selling smartwatch has a massive seventy percent discount! "
+            f"Originally five thousand rupees, now selling for just fifteen hundred rupees. "
+            f"Stocks are disappearing fast, comment watch below, "
+            f"and we will send the direct link to your inbox!"
         ),
         "caption": (
             f"🚨 STOP SCROLLING! UNREAL PRICE CRASH! 🚨\n\n"
             f"⚡ {PRODUCT['title']}\n"
-            f"🏷️ MRP: {PRODUCT['mrp']}\n"
+            f"🏷️ Original Price: {PRODUCT['mrp']}\n"
             f"💥 Steal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
-            f"👉 Comment \"{TRIGGER_KEYWORD}\" right below to get the direct discounted link in your DM! 📩\n\n"
+            f"👉 Comment \"{TRIGGER_KEYWORD}\" right below to get direct link in your DM! 📩\n\n"
             f"⚠️ (Affiliate Disclosure: As an affiliate partner, we earn from qualifying purchases at no additional cost to you.)\n\n"
-            f"#ad #affiliate #stealdeals #techtrends #amazonfinds #smartwatch #viral #explorepage #instareels #lootdeals #reelsindia"
+            f"#ad #affiliate #stealdeals #techtrends #amazonfinds #smartwatch #viral #explorepage #instareels #lootdeals"
         )
     }
 }
@@ -118,28 +112,52 @@ async def generate_voiceover(text, voice_name, rate, pitch, output_path):
     communicate = edge_tts.Communicate(text, voice_name, rate=rate, pitch=pitch)
     await communicate.save(output_path)
 
-def download_image(url, save_path):
-    res = requests.get(url, stream=True, timeout=20)
+def download_file(url, save_path):
+    res = requests.get(url, stream=True, timeout=30)
     with open(save_path, 'wb') as f:
-        f.write(res.content)
+        for chunk in res.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
 
-def build_cinematic_reel(lang, audio_path, image_path, output_video):
+def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
     cfg = LANG_CONFIG[lang]
     audio = AudioFileClip(audio_path)
     duration = audio.duration
 
-    # Dark modern studio background canvas
-    canvas = ColorClip(size=(1080, 1920), color=(12, 14, 20), duration=duration)
+    # 1. Base Product Video Handling (Crop & Fit to 9:16 Vertical)
+    source_clip = VideoFileClip(raw_video_path)
+    
+    # Loop source video if shorter than audio
+    if source_clip.duration < duration:
+        loops_needed = int(duration / source_clip.duration) + 1
+        video_sequence = [source_clip] * loops_needed
+        from moviepy.editor import concatenate_videoclips
+        source_clip = concatenate_videoclips(video_sequence)
+        
+    source_clip = source_clip.subclip(0, duration)
+    
+    # Scale & Center crop to 1080x1920
+    w, h = source_clip.size
+    target_aspect = 1080 / 1920
+    current_aspect = w / h
+    
+    if current_aspect > target_aspect:
+        new_w = int(h * target_aspect)
+        x_center = w / 2
+        bg_video = source_clip.crop(x1=x_center - new_w / 2, x2=x_center + new_w / 2, y1=0, y2=h)
+    else:
+        new_h = int(w / target_aspect)
+        y_center = h / 2
+        bg_video = source_clip.crop(y1=y_center - new_h / 2, y2=y_center + new_h / 2, x1=0, x2=w)
+        
+    bg_video = bg_video.resize((1080, 1920))
 
-    # Dynamic camera zoom & pulse effect on product visual
-    img_clip = ImageClip(image_path).set_duration(duration)
-    img_clip = img_clip.resize(height=980)
-    # Smooth continuous zoom-in for dynamic motion
-    img_clip = img_clip.resize(lambda t: 1.0 + 0.05 * (t / max(duration, 1)))
-    img_clip = img_clip.set_position(('center', 460))
+    # Top & Bottom soft dark gradients for text readability
+    top_vignette = ColorClip(size=(1080, 480), color=(0, 0, 0), duration=duration).set_opacity(0.45).set_position(('center', 0))
+    bottom_vignette = ColorClip(size=(1080, 680), color=(0, 0, 0), duration=duration).set_opacity(0.55).set_position(('center', 1240))
 
-    # Top Deal Badge Banner
-    badge_bg = ColorClip(size=(720, 110), color=(255, 20, 80), duration=duration).set_position(('center', 150))
+    # Static Deal Badge Banner (Top)
+    badge_bg = ColorClip(size=(720, 110), color=(255, 10, 84), duration=duration).set_position(('center', 140))
     badge_text = TextClip(
         f"🔥 {PRODUCT.get('discount', '70% OFF')} LIMITED DROP 🔥",
         fontsize=42,
@@ -147,45 +165,57 @@ def build_cinematic_reel(lang, audio_path, image_path, output_video):
         font='Poppins-Black',
         size=(720, 110),
         method='caption'
-    ).set_position(('center', 150)).set_duration(duration)
+    ).set_position(('center', 140)).set_duration(duration)
 
-    # Dynamic Hook Banner (Appears for first 4 seconds)
-    hook_box = TextClip(
-        cfg["hook"],
-        fontsize=46,
-        color='#FFE600',
-        font=cfg["font"],
-        size=(1000, None),
-        method='caption'
-    ).set_position(('center', 290)).set_duration(min(duration, 4.0))
+    # 2. Dynamic 3-5 Words Synchronized Animated Subtitles (Typing / Flash Chunks)
+    words = cfg["script"].split()
+    chunk_size = 4
+    word_chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
+    chunk_duration = duration / max(len(word_chunks), 1)
 
-    # Clean Modern Pricing Card
-    price_tag = TextClip(
-        f"DEAL: {PRODUCT.get('deal_price', '₹1,499')}  |  MRP: {PRODUCT.get('mrp', '₹4,999')}",
-        fontsize=52,
-        color='#00FFD1',
-        font='Poppins-Black',
-        size=(980, None),
-        method='caption'
-    ).set_position(('center', 1500)).set_duration(duration)
+    animated_caption_clips = []
+    for idx, chunk in enumerate(word_chunks):
+        start_time = idx * chunk_duration
+        current_dur = min(chunk_duration, duration - start_time)
+        
+        # Word Box Background
+        bg_card = ColorClip(size=(980, 170), color=(10, 12, 16), duration=current_dur).set_opacity(0.85)
+        
+        caption_txt = TextClip(
+            chunk,
+            fontsize=46,
+            color='#FFE600',
+            font=cfg["font"],
+            size=(940, 150),
+            method='caption'
+        ).set_duration(current_dur)
+        
+        chunk_composite = CompositeVideoClip([bg_card, caption_txt.set_position('center')], size=(980, 170))
+        chunk_composite = chunk_composite.set_start(start_time).set_position(('center', 1330))
+        animated_caption_clips.append(chunk_composite)
 
-    # Bottom CTA Box
-    cta_bar = ColorClip(size=(960, 130), color=(0, 100, 255), duration=duration).set_position(('center', 1650))
+    # Persistent Bottom Action Bar
+    cta_bar = ColorClip(size=(1000, 120), color=(0, 122, 255), duration=duration).set_position(('center', 1660))
     cta_text = TextClip(
         f"👇 COMMENT '{TRIGGER_KEYWORD}' FOR DIRECT LINK 👇",
         fontsize=38,
         color='#FFFFFF',
         font='Poppins-Black',
-        size=(940, 130),
+        size=(980, 120),
         method='caption'
-    ).set_position(('center', 1650)).set_duration(duration)
+    ).set_position(('center', 1660)).set_duration(duration)
 
-    final_video = CompositeVideoClip(
-        [canvas, img_clip, badge_bg, badge_text, hook_box, price_tag, cta_bar, cta_text],
-        size=(1080, 1920)
-    ).set_duration(duration)
+    # Composite Layers Together
+    elements = [
+        bg_video, top_vignette, bottom_vignette,
+        badge_bg, badge_text,
+        *animated_caption_clips,
+        cta_bar, cta_text
+    ]
 
+    final_video = CompositeVideoClip(elements, size=(1080, 1920)).set_duration(duration)
     final_video = final_video.set_audio(audio)
+    
     final_video.write_videofile(
         output_video,
         fps=30,
@@ -197,7 +227,7 @@ def build_cinematic_reel(lang, audio_path, image_path, output_video):
 
 def post_reel_to_meta(video_url, caption):
     base_url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}"
-    print(f"Creating Reel container on Meta for account [{IG_USER_ID}]...")
+    print(f"Creating Reel container for video: {video_url}")
     
     res = requests.post(f"{base_url}/media", data={
         "media_type": "REELS",
@@ -208,10 +238,10 @@ def post_reel_to_meta(video_url, caption):
     
     creation_id = res.get("id")
     if not creation_id:
-        print("Reel Container Creation Failed:", res)
+        print("Container Creation Failed:", res)
         sys.exit(1)
         
-    print(f"Container created ID: {creation_id}. Polling transcoding status...")
+    print(f"Container created ID: {creation_id}. Polling Meta transcode status...")
     
     max_retries = 18
     for attempt in range(max_retries):
@@ -236,7 +266,7 @@ def post_reel_to_meta(video_url, caption):
     
     post_id = pub.get("id")
     if post_id:
-        print("🎉 SUCCESS! Pro-Quality Reel is Live! Post ID:", post_id)
+        print("🎉 SUCCESS! Pro-Video Reel is Live! Post ID:", post_id)
     else:
         print("Publishing Failed:", pub)
         sys.exit(1)
@@ -246,13 +276,15 @@ async def render_flow():
         f.write(ACTIVE_LANG)
         
     audio_file = f"audio_{ACTIVE_LANG}.mp3"
-    img_file = "product.jpg"
+    raw_video = "source_product.mp4"
     video_file = f"reel_{ACTIVE_LANG}.mp4"
 
-    download_image(PRODUCT["image_url"], img_file)
+    # Download raw product review video clip
+    download_file(PRODUCT["video_url"], raw_video)
+    
     cfg = LANG_CONFIG[ACTIVE_LANG]
     await generate_voiceover(cfg["script"], cfg["voice"], cfg["rate"], cfg["pitch"], audio_file)
-    build_cinematic_reel(ACTIVE_LANG, audio_file, img_file, video_file)
+    build_cinematic_reel(ACTIVE_LANG, audio_file, raw_video, video_file)
     print(f"Video rendered successfully: {video_file}")
 
 def publish_flow():
