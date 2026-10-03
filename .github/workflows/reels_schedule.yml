@@ -14,7 +14,7 @@ on:
     - cron: '30 7 * * *'
     # 5:00 PM IST -> 11:30 AM UTC (English)
     - cron: '30 11 * * *'
-    # Every 1 Hour comments auto-check chesthundi
+    # Every 1 Hour comments auto-check
     - cron: '0 * * * *'
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick curl
+          sudo apt-get install -y ffmpeg imagemagick curl jq
           sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<!-- <policy domain="path" rights="none" pattern="@\*" -->/' /etc/ImageMagick-6/policy.xml || true
           sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<!-- <policy domain="path" rights="none" pattern="@\*" -->/' /etc/ImageMagick-7/policy.xml || true
 
@@ -55,7 +55,8 @@ jobs:
         run: |
           LANG=$(cat current_lang.txt)
           VIDEO_FILE="reel_${LANG}.mp4"
-          DOWNLOAD_URL=$(curl --upload-file ./${VIDEO_FILE} https://transfer.sh/${VIDEO_FILE})
+          # Reliable fast upload to Litterbox
+          DOWNLOAD_URL=$(curl -F "reqtype=fileupload" -F "time=1h" -F "fileToUpload=@${VIDEO_FILE}" https://litterbox.catbox.moe/resources/internals/api.php)
           echo "PUBLIC_URL=${DOWNLOAD_URL}" >> $GITHUB_ENV
           echo "Public Video Link: ${DOWNLOAD_URL}"
 
