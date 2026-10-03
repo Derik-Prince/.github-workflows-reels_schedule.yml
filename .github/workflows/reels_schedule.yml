@@ -14,7 +14,7 @@ on:
     - cron: '30 7 * * *'
     # 5:00 PM IST -> 11:30 AM UTC (English)
     - cron: '30 11 * * *'
-    # Every 1 Hour comments auto-check (Meta Rate Limits safe interval)
+    # Every 1 Hour comments auto-check
     - cron: '0 * * * *'
 
 permissions:
@@ -50,17 +50,26 @@ jobs:
         run: |
           python render_ae_reel.py --render-only
 
-      - name: Upload Video to Temporary Public URL
+      - name: Upload Video to GitHub Release CDN
         if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           LANG=$(cat current_lang.txt)
           VIDEO_FILE="reel_${LANG}.mp4"
-          # Direct unblocked URL from tmpfiles.org
-          RAW_URL=$(curl -F "file=@${VIDEO_FILE}" https://tmpfiles.org/api/v1/upload | jq -r '.data.url')
-          # Convert preview page to direct direct-download stream for Meta
-          DOWNLOAD_URL=$(echo "$RAW_URL" | sed 's/tmpfiles.org\//tmpfiles.org\/dl\//')
+          
+          # Delete previous cache tag if present
+          gh release delete v1.0-cache -y || true
+          git tag -d v1.0-cache || true
+          git push origin :refs/tags/v1.0-cache || true
+          
+          # Publish direct high-speed GitHub Release CDN asset
+          gh release create v1.0-cache "$VIDEO_FILE" --title "Reel Cache" --notes "Automated Reel Asset"
+          
+          REPO_NAME="${{ github.repository }}"
+          DOWNLOAD_URL="https://github.com/${REPO_NAME}/releases/download/v1.0-cache/${VIDEO_FILE}"
           echo "PUBLIC_URL=${DOWNLOAD_URL}" >> $GITHUB_ENV
-          echo "Public Direct Video Link: ${DOWNLOAD_URL}"
+          echo "Direct GitHub CDN Video URL: ${DOWNLOAD_URL}"
 
       - name: Publish Reel to Instagram
         if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
