@@ -4,7 +4,7 @@ import time
 import json
 import subprocess
 import requests
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 IG_USER_ID = (os.getenv("IG_USER_ID") or "17841417494301577").strip()
 ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
@@ -13,44 +13,106 @@ ELEVEN_KEY = os.getenv("ELEVENLABS_API_KEY")
 with open("active_deal.json", "r", encoding="utf-8") as f:
     PRODUCT = json.load(f)
 
+# Language strict separation: default 'te', can be passed via env
+TARGET_LANG = os.getenv("TARGET_LANG", "te").strip().lower()
+if TARGET_LANG not in ["te", "hi", "en"]:
+    TARGET_LANG = "te"
+
 TRIGGER_KEYWORD = PRODUCT.get("keyword", "DEAL").upper()
 
-VOICE_SCRIPT = (
-    "Brooo! Check this out! "
-    f"Deal price వచ్చి కేవలం {PRODUCT.get('deal_price', '999 rupees')} మాత్రమే! "
-    "Wait wait wait, ఇది regular product కాదు భయ్యా, crazy price drop! "
-    f"మార్కెట్ లో దీని actual MRP వచ్చి {PRODUCT.get('mrp', '2,999 rupees')} ఉండేది, "
-    f"కానీ ఇవాళ ఏకంగా {PRODUCT.get('discount', '60 percent')} discount! "
-    "Quality and looks super premium ఉన్నాయి! "
-    "ఈ లిమిటెడ్ డీల్ ఎప్పుడైనా end అవ్వచ్చు. "
-    f"కింద కామెంట్స్ లో {TRIGGER_KEYWORD} అని టైప్ చేయండి, "
-    "official direct discount link instant గా మీ DM కి వస్తుంది!"
-)
+# 100% SEPARATE SCRIPTS PER LANGUAGE (NO MIXING)
+SCRIPTS = {
+    "te": {
+        "voice_id": "pNInz6obpgDQGcFmaJgB",
+        # Pure natural Telugu without Hindi mixing, numbers spelled out for clear pronunciation
+        "script": (
+            "బ్రో! ఒక్కసారి ఇది చూడండి! "
+            "డీల్ ప్రైస్ కేవలం తొమ్మిది వందల తొంభై తొమ్మిది రూపాయలు మాత్రమే! "
+            "ఆగండి ఆగండి, ఇది మామూలు ఆఫర్ కాదు, కళ్లు చెదిరే ప్రైస్ డ్రాప్! "
+            "మార్కెట్ లో దీని అసలు రేటు రెండు వేల తొమ్మిది వందల రూపాయలు ఉండేది, "
+            "కానీ ఈ రోజు ఏకంగా అరవై శాతం భారీ తగ్గింపు లభిస్తోంది! "
+            "లుక్స్ మరియు క్వాలిటీ చాలా బాగున్నాయి. "
+            "ఈ ఆఫర్ కొద్ది సమయం మాత్రమే ఉంటుంది. "
+            f"కింద కామెంట్స్ లో {TRIGGER_KEYWORD} అని టైప్ చేయండి, "
+            "డైరెక్ట్ బై లింక్ వెంటనే మీ ఇన్ బాక్స్ కి పంపిస్తాను!"
+        ),
+        "caption": (
+            f"⚡ Bro, Check this out! Deal Price {PRODUCT.get('deal_price', '₹999')} only!\n\n"
+            f"🔥 Product: {PRODUCT.get('title', 'Smart Tech Gadget')}\n"
+            f"🏷️ MRP: {PRODUCT.get('mrp', '₹2,999')}\n"
+            f"💥 Deal: {PRODUCT.get('deal_price', '₹999')} ({PRODUCT.get('discount', '60% OFF')})\n\n"
+            f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
+            f"#ad #affiliate #telugutech #lootdeals #amazonfinds #reelsindia"
+        ),
+        "tts_voice": "te-IN-MohanNeural"
+    },
+    "hi": {
+        "voice_id": "pNInz6obpgDQGcFmaJgB",
+        # Pure natural Hindi without Telugu words
+        "script": (
+            "भाई लोग! एक बार ये ऑफर जरूर देखिए! "
+            "डील प्राइस सिर्फ नौ सौ निन्यानवे रुपये है! "
+            "रुकिए रुकिए, ये कोई साधारण ऑफर नहीं, बहुत बड़ा प्राइस ड्रॉप है! "
+            "मार्केट में इसका असली दाम दो हज़ार नौ सौ रुपये था, "
+            "लेकिन आज सीधा साठ परसेंट का भारी डिस्काउंट मिल रहा है! "
+            "इसकी क्वालिटी और लुक बेहद शानदार हैं। "
+            "ये लिमिटेड टाइम लूट डील कभी भी खत्म हो सकती है। "
+            f"नीचे कमेंट्स में {TRIGGER_KEYWORD} टाइप कीजिए, "
+            "ऑफिशियल डायरेक्ट लिंक तुरंत आपके डीएम में आ जाएगा!"
+        ),
+        "caption": (
+            f"⚡ लूट ऑफर! Deal Price {PRODUCT.get('deal_price', '₹999')} only!\n\n"
+            f"🔥 Product: {PRODUCT.get('title', 'Smart Tech Gadget')}\n"
+            f"🏷️ MRP: {PRODUCT.get('mrp', '₹2,999')}\n"
+            f"💥 Deal: {PRODUCT.get('deal_price', '₹999')}\n\n"
+            f"👉 लिंक के लिए नीचे \"{TRIGGER_KEYWORD}\" कमेंट करें! तुरंत DM आ जाएगा! 📩\n\n"
+            f"#ad #affiliate #techdeals #lootdeals #amazonfinds #viralreels"
+        ),
+        "tts_voice": "hi-IN-MadhurNeural"
+    },
+    "en": {
+        "voice_id": "pNInz6obpgDQGcFmaJgB",
+        # Pure fluent English
+        "script": (
+            "Bro, check this out right now! "
+            "The special deal price is just nine ninety-nine rupees! "
+            "Wait, this is an incredible price drop! "
+            "The actual retail price was two thousand nine hundred rupees, "
+            "but today you get a massive sixty percent discount! "
+            "The build quality and design look super premium. "
+            "This limited-time offer might end anytime. "
+            f"Comment {TRIGGER_KEYWORD} right below, "
+            "and I will send the direct verified link straight to your DM!"
+        ),
+        "caption": (
+            f"⚡ Massive Price Drop! Deal Price {PRODUCT.get('deal_price', '₹999')} only!\n\n"
+            f"🔥 Product: {PRODUCT.get('title', 'Smart Tech Gadget')}\n"
+            f"🏷️ MRP: {PRODUCT.get('mrp', '₹2,999')}\n"
+            f"💥 Deal: {PRODUCT.get('deal_price', '₹999')}\n\n"
+            f"👉 Comment \"{TRIGGER_KEYWORD}\" below for direct official link! 📩\n\n"
+            f"#ad #affiliate #techdeals #smartgadgets #amazonfinds"
+        ),
+        "tts_voice": "en-IN-PrabhatNeural"
+    }
+}
 
-CAPTION = (
-    f"⚡ Bro, Check this out! Deal Price {PRODUCT.get('deal_price', '₹999')} only!\n\n"
-    f"🔥 Product: {PRODUCT.get('title', 'Smart Tech Gadget')}\n"
-    f"🏷️ MRP: {PRODUCT.get('mrp', '₹2,999')}\n"
-    f"💥 Deal: {PRODUCT.get('deal_price', '₹999')} ({PRODUCT.get('discount', 'Huge Discount')})\n\n"
-    f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
-    f"#ad #affiliate #telugutech #lootdeals #amazonfinds #reelsindia"
-)
+ACTIVE_CONFIG = SCRIPTS[TARGET_LANG]
 
 def generate_natural_voice(output_path):
-    print("Generating natural voice via ElevenLabs...")
-    url = "https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB"
+    print(f"Generating voice for language [{TARGET_LANG.upper()}] via ElevenLabs...")
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{ACTIVE_CONFIG['voice_id']}"
     headers = {
         "Accept": "audio/mpeg",
         "Content-Type": "application/json",
         "xi-api-key": ELEVEN_KEY
     }
     data = {
-        "text": VOICE_SCRIPT,
+        "text": ACTIVE_CONFIG["script"],
         "model_id": "eleven_multilingual_v2",
         "voice_settings": {
-            "stability": 0.32,
-            "similarity_boost": 0.82,
-            "style": 0.55,
+            "stability": 0.40,          # Kept stable so languages don't bleed/mix
+            "similarity_boost": 0.85,
+            "style": 0.35,             # Pure accent without language crossover
             "use_speaker_boost": True
         }
     }
@@ -58,17 +120,22 @@ def generate_natural_voice(output_path):
     if res.status_code == 200:
         with open(output_path, "wb") as f:
             f.write(res.content)
-        print("Natural voice ready!")
+        print("Pure voice generated successfully!")
     else:
-        print(f"Fallback edge-tts: {res.text}")
-        subprocess.run(["edge-tts", "--voice", "te-IN-MohanNeural", "--text", VOICE_SCRIPT, "--write-media", output_path], check=True)
+        print(f"ElevenLabs fallback ({res.status_code}): Using Microsoft Edge TTS ({ACTIVE_CONFIG['tts_voice']})")
+        subprocess.run([
+            "edge-tts", 
+            "--voice", ACTIVE_CONFIG["tts_voice"], 
+            "--text", ACTIVE_CONFIG["script"], 
+            "--write-media", output_path
+        ], check=True)
 
 def create_product_card_graphic(image_url, save_path):
     raw_img = "raw_download.jpg"
     try:
         subprocess.run(["curl", "-L", "-A", "Mozilla/5.0", "-o", raw_img, image_url], check=True)
         img = Image.open(raw_img).convert("RGBA")
-    except Exception as e:
+    except Exception:
         img = Image.new("RGBA", (500, 500), (255, 255, 255, 255))
 
     img.thumbnail((620, 620), Image.Resampling.LANCZOS)
@@ -77,10 +144,9 @@ def create_product_card_graphic(image_url, save_path):
     card = Image.new("RGBA", (card_w, card_h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(card)
     
-    # White glossy card with neon border & rounded corners
+    # Clean white card with neon accent outline
     draw.rounded_rectangle([0, 0, card_w, card_h], radius=44, fill=(255, 255, 255, 250), outline=(0, 255, 102, 255), width=8)
     
-    # Center product in card
     ox = (card_w - img.width) // 2
     oy = (card_h - img.height) // 2
     card.paste(img, (ox, oy), img)
@@ -88,10 +154,9 @@ def create_product_card_graphic(image_url, save_path):
 
 def render_motion_video():
     os.makedirs("out", exist_ok=True)
-    audio_file = "audio_te.mp3"
+    audio_file = f"audio_{TARGET_LANG}.mp3"
     generate_natural_voice(audio_file)
     
-    # Product card generation
     card_img = "product_card.png"
     img_url = PRODUCT.get("image_url") or "https://m.media-amazon.com/images/I/61SSVxTSs3L._SL1500_.jpg"
     create_product_card_graphic(img_url, card_img)
@@ -99,8 +164,9 @@ def render_motion_video():
     deal_price = PRODUCT.get('deal_price', '₹999').replace(":", "")
     keyword = TRIGGER_KEYWORD
     
-    print("Rendering Google-style motion graphics reel via FFmpeg...")
-    # Clean, professional animated video with smooth spring-like slide-up, glowing gradients, deal tag and CTA
+    output_video = f"out/reel_{TARGET_LANG}.mp4"
+    print(f"Rendering isolated [{TARGET_LANG.upper()}] Reel via FFmpeg...")
+    
     ffmpeg_cmd = [
         "ffmpeg", "-y",
         "-f", "lavfi", "-i", "color=c=#0b0e14:s=1080x1920:d=16:r=30",
@@ -117,7 +183,7 @@ def render_motion_video():
         "-pix_fmt", "yuv420p",
         "-preset", "fast",
         "-shortest",
-        "out/reel_te.mp4"
+        output_video
     ]
     subprocess.run(ffmpeg_cmd, check=True)
     print("Video rendered successfully!")
@@ -127,7 +193,7 @@ def post_reel_to_meta(video_url):
     res = requests.post(f"{base_url}/media", data={
         "media_type": "REELS",
         "video_url": video_url,
-        "caption": CAPTION,
+        "caption": ACTIVE_CONFIG["caption"],
         "access_token": ACCESS_TOKEN
     }).json()
     creation_id = res.get("id")
@@ -149,7 +215,7 @@ def post_reel_to_meta(video_url):
         "creation_id": creation_id,
         "access_token": ACCESS_TOKEN
     }).json()
-    print("🎉 SUCCESS! Pro Google-Style Reel is Live! ID:", pub.get("id"))
+    print("🎉 SUCCESS! Isolated Clean Reel is Live! ID:", pub.get("id"))
 
 if __name__ == "__main__":
     if "--render-only" in sys.argv:
