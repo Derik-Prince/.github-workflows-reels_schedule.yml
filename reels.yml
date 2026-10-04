@@ -1,0 +1,55 @@
+name: Generate and publish deal reels
+on:
+  workflow_dispatch:
+    inputs:
+      language:
+        description: Language
+        required: true
+        default: te
+        type: choice
+        options: [te, hi, en]
+  schedule:
+    - cron: '30 1 * * *'   # 07:00 IST Telugu
+    - cron: '30 7 * * *'   # 13:00 IST Hindi
+    - cron: '30 11 * * *'  # 17:00 IST English
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install Python packages
+        run: pip install -r requirements.txt
+      - name: Select scheduled language
+        id: lang
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "lang=${{ inputs.language }}" >> "$GITHUB_OUTPUT"
+          else
+            H=$(date -u +%H)
+            if [ "$H" = "01" ]; then echo "lang=te" >> "$GITHUB_OUTPUT";
+            elif [ "$H" = "07" ]; then echo "lang=hi" >> "$GITHUB_OUTPUT";
+            else echo "lang=en" >> "$GITHUB_OUTPUT"; fi
+          fi
+      - name: Generate Reel
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
+          PUBLISH_INSTAGRAM: ${{ secrets.PUBLISH_INSTAGRAM }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_API_VERSION: ${{ secrets.IG_API_VERSION }}
+        run: python -m app.main --language "${{ steps.lang.outputs.lang }}"
+      - name: Upload generated reel as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel-${{ steps.lang.outputs.lang }}-${{ github.run_id }}
+          path: public/reels/*.mp4
+          retention-days: 2

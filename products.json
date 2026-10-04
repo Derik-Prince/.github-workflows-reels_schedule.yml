@@ -1,0 +1,42 @@
+[
+  {
+    "id": "firebolt-watch",
+    "title": "Fire-Boltt Smart Watch",
+    "category": "watch",
+    "current_price": 1499,
+    "original_price": 2999,
+    "discount_percent": 50,
+    "currency": "₹",
+    "keyword": "WATCH",
+    "website_url": "https://yourwebsite.com/p/firebolt-watch",
+    "affiliate_links": {
+      "amazon": "https://www.amazon.in/",
+      "flipkart": "https://www.flipkart.com/"
+    },
+    "features": ["Bluetooth calling", "Fitness tracking", "Large display"],
+    "image_urls": [],
+    "video_urls": [],
+    "priority": 80,
+    "active": true
+  },
+  {
+    "id": "wireless-buds",
+    "title": "Wireless Bluetooth Earbuds",
+    "category": "earbuds",
+    "current_price": 1299,
+    "original_price": 2499,
+    "discount_percent": 48,
+    "currency": "₹",
+    "keyword": "BUDS",
+    "website_url": "https://yourwebsite.com/p/wireless-buds",
+    "affiliate_links": {
+      "amazon": "https://www.amazon.in/",
+      "flipkart": "https://www.flipkart.com/"
+    },
+    "features": ["Low-latency mode", "Clear calling", "Long battery"],
+    "image_urls": [],
+    "video_urls": [],
+    "priority": 75,
+    "active": true
+  }
+]
