@@ -14,8 +14,8 @@ from moviepy.editor import (
 
 IG_USER_ID = (os.getenv("IG_USER_ID") or "17841417494301577").strip()
 ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
+PIXABAY_KEY = os.getenv("PIXABAY_API_KEY")
 
-# Auto-Generated Deal Load
 with open("active_deal.json", "r", encoding="utf-8") as f:
     PRODUCT = json.load(f)
 
@@ -55,7 +55,7 @@ LANG_CONFIG = {
             f"⚡ {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
-            f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" అని comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
+            f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
             f"⚠️ (Legal Affiliate Disclosure: As an Amazon Associate, we earn from qualifying purchases at no additional cost to you.)\n\n"
             f"#ad #affiliate #telugureels #telugutech #lootdeals #amazonfinds #techgadgets #viralreels #explorepage #instadeals"
         )
@@ -102,24 +102,43 @@ LANG_CONFIG = {
             f"🏷️ Original Price: {PRODUCT['mrp']}\n"
             f"💥 Steal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
             f"👉 Comment \"{TRIGGER_KEYWORD}\" right below to get direct link in your DM! 📩\n\n"
-            f"⚠️ (Affiliate Disclosure: As an affiliate partner, we earn from qualifying purchases at no extra cost to you.)\n\n"
+            f"⚠️️ (Affiliate Disclosure: As an affiliate partner, we earn from qualifying purchases at no extra cost to you.)\n\n"
             f"#ad #affiliate #stealdeals #techtrends #amazonfinds #viral #explorepage #instareels #lootdeals"
         )
     }
 }
 
-async def generate_voiceover(text, voice_name, rate, pitch, output_path):
-    communicate = edge_tts.Communicate(text, voice_name, rate=rate, pitch=pitch)
-    await communicate.save(output_path)
+def fetch_pixabay_vertical_video(query, save_path):
+    print(f"Fetching free HD vertical clip from Pixabay for: {query}...")
+    video_url = None
+    if PIXABAY_KEY:
+        try:
+            url = f"https://pixabay.com/api/videos/?key={PIXABAY_KEY}&q={requests.utils.quote(query)}&video_type=film&per_page=5"
+            res = requests.get(url, timeout=15).json()
+            hits = res.get("hits", [])
+            if hits:
+                videos_obj = hits[0].get("videos", {})
+                for quality in ["large", "medium", "small"]:
+                    if quality in videos_obj and videos_obj[quality].get("url"):
+                        video_url = videos_obj[quality]["url"]
+                        break
+        except Exception as e:
+            print(f"Pixabay fetch error: {e}")
 
-def download_video_file(url, save_path):
-    # Curl with browser user-agent avoids bot blocks
+    if not video_url:
+        # Fallback reliable high quality tech clip
+        video_url = "https://assets.mixkit.co/videos/preview/mixkit-smartwatch-on-a-mans-wrist-touching-the-screen-41312-large.mp4"
+
     cmd = [
         "curl", "-L", "-A",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "-o", save_path, url
+        "-o", save_path, video_url
     ]
     subprocess.run(cmd, check=True)
+
+async def generate_voiceover(text, voice_name, rate, pitch, output_path):
+    communicate = edge_tts.Communicate(text, voice_name, rate=rate, pitch=pitch)
+    await communicate.save(output_path)
 
 def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
     cfg = LANG_CONFIG[lang]
@@ -145,7 +164,7 @@ def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
             bg_video = source_clip.crop(y1=(h - new_h)/2, y2=(h + new_h)/2, x1=0, x2=w)
         bg_video = bg_video.resize((1080, 1920))
     except Exception as e:
-        print(f"Fallback to studio canvas due to video read error: {e}")
+        print(f"Fallback canvas: {e}")
         bg_video = ColorClip(size=(1080, 1920), color=(14, 16, 22), duration=duration)
 
     # Gradients for text contrast
@@ -163,7 +182,7 @@ def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
         method='caption'
     ).set_position(('center', 140)).set_duration(duration)
 
-    # Dynamic 3-5 Words Synced Captions (Alex Hormozi Style)
+    # 3-5 Words Synced Captions (Alex Hormozi Style)
     words = cfg["script"].split()
     chunk_size = 4
     word_chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
@@ -186,7 +205,7 @@ def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
         chunk_composite = chunk_composite.set_start(st).set_position(('center', 1330))
         animated_caption_clips.append(chunk_composite)
 
-    # Action Bar (CTA)
+    # CTA Action Bar
     cta_bar = ColorClip(size=(1000, 120), color=(0, 122, 255), duration=duration).set_position(('center', 1660))
     cta_text = TextClip(
         f"👇 COMMENT '{TRIGGER_KEYWORD}' FOR DIRECT LINK 👇",
@@ -257,7 +276,9 @@ async def render_flow():
     raw_video = "source_video.mp4"
     video_file = f"reel_{ACTIVE_LANG}.mp4"
 
-    download_video_file(PRODUCT["video_url"], raw_video)
+    search_query = PRODUCT.get("keyword", "gadget") + " technology"
+    fetch_pixabay_vertical_video(search_query, raw_video)
+    
     cfg = LANG_CONFIG[ACTIVE_LANG]
     await generate_voiceover(cfg["script"], cfg["voice"], cfg["rate"], cfg["pitch"], audio_file)
     build_cinematic_reel(ACTIVE_LANG, audio_file, raw_video, video_file)
