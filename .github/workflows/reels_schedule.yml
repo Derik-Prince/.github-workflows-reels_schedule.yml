@@ -41,7 +41,7 @@ jobs:
 
       - name: Install Python Packages
         run: |
-          pip install "moviepy<2.0.0" requests edge-tts pillow==9.5.0 beautifulsoup4
+          pip install "moviepy<2.0.0" requests edge-tts pillow==9.5.0 beautifulsoup4 openai-whisper elevenlabs
 
       - name: Auto-Discover and Select Trending Deal
         if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
@@ -53,6 +53,7 @@ jobs:
         env:
           TARGET_LANG: ${{ github.event.inputs.target_lang }}
           PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: |
           python render_ae_reel.py --render-only
 
