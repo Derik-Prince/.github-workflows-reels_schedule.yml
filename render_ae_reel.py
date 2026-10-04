@@ -9,7 +9,7 @@ import requests
 import edge_tts
 from moviepy.editor import (
     VideoFileClip, AudioFileClip, CompositeVideoClip, TextClip,
-    ColorClip
+    ColorClip, concatenate_videoclips
 )
 
 IG_USER_ID = (os.getenv("IG_USER_ID") or "17841417494301577").strip()
@@ -25,11 +25,11 @@ if target_input in ["te", "hi", "en"]:
 else:
     utc_hour = datetime.datetime.utcnow().hour
     if utc_hour == 1:
-        ACTIVE_LANG = "te"   # 7:00 AM IST
+        ACTIVE_LANG = "te"
     elif utc_hour == 7:
-        ACTIVE_LANG = "hi"   # 1:00 PM IST
+        ACTIVE_LANG = "hi"
     elif utc_hour == 11:
-        ACTIVE_LANG = "en"   # 5:00 PM IST
+        ACTIVE_LANG = "en"
     else:
         ACTIVE_LANG = "te"
 
@@ -38,78 +38,85 @@ TRIGGER_KEYWORD = PRODUCT.get("keyword", "DEAL").upper()
 LANG_CONFIG = {
     "te": {
         "voice": "te-IN-MohanNeural",
-        "font": "Pragati Narrow",
-        "rate": "+6%",
+        "font": "DejaVu-Sans-Bold",
+        "rate": "+4%",
         "pitch": "+0Hz",
-        "hook": f"WAIT! SCROLL CHEYODDU! 🚨\nకామెంట్ చేయండి '{TRIGGER_KEYWORD}'",
         "script": (
-            f"ఒక్క సెకండ్ ఆగండి బ్రో! ఈ రోజు క్రేజీ లూట్ ఆఫర్ వచ్చేసింది! "
-            f"{PRODUCT['title']} మీద ఏకంగా {PRODUCT['discount']} భారీ ప్రైస్ డ్రాప్ పడింది! "
-            f"మార్కెట్ లో {PRODUCT['mrp']} ఉండేది, ఇప్పుడు కేవలం {PRODUCT['deal_price']} రూపాయలకే దొరుకుతోంది! "
-            f"ఈ ఆఫర్ స్టాక్ ఉన్నంత వరకే ఉంటుంది. "
-            f"డైరెక్ట్ సీక్రెట్ బై లింక్ మీ ఇన్ బాక్స్ కి రావాలంటే, "
-            f"వెంటనే కింద కామెంట్స్ లో {TRIGGER_KEYWORD} అని కామెంట్ చేయండి!"
+            f"గైస్, చెక్ దిస్ ఔట్! డీల్ ప్రైస్ కేవలం {PRODUCT['deal_price']} రూపాయలు! "
+            f"ఇది నార్మల్ వాచ్ కాదు, సూపర్ ఆఫర్ ఇది! "
+            f"మార్కెట్ లో యాక్చువల్ ప్రైస్ {PRODUCT['mrp']}, కానీ ఇప్పుడు భారీ ప్రైస్ డ్రాప్! "
+            f"డిస్ప్లే చాలా బ్రైట్ గా ఉంది, స్మూత్ నెస్ సూపర్ ఉంది! "
+            f"స్ట్రాప్ క్వాలిటీ మరియు బిల్డ్ కూడా ఇన్ క్రెడిబుల్ గా ఉంది. "
+            f"డీల్ ప్రైస్ త్వరలోనే ఎండ్ అవుతుంది! ఇప్పుడే కింద కామెంట్స్ లో {TRIGGER_KEYWORD} అని టైప్ చేయండి, "
+            f"డైరెక్ట్ బై లింక్ మీ ఇన్ బాక్స్ కి వస్తుంది!"
         ),
         "caption": (
-            f"🚨 MASSIVE TECH LOOT TODAY! 🚨\n\n"
-            f"⚡ {PRODUCT['title']}\n"
+            f"⚡ Guys, Check this out! Deal Price {PRODUCT['deal_price']} only!\n\n"
+            f"🔥 Product: {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
             f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
-            f"⚠️ (Legal Affiliate Disclosure: As an Amazon Associate, we earn from qualifying purchases at no additional cost to you.)\n\n"
-            f"#ad #affiliate #telugureels #telugutech #lootdeals #amazonfinds #techgadgets #viralreels #explorepage #instadeals"
+            f"⚠️ (Legal Affiliate Disclosure: As an Amazon Associate, we earn from qualifying purchases at no extra cost to you.)\n\n"
+            f"#ad #affiliate #telugureels #telugutech #smartwatch #amazonfinds #viralreels #explorepage #techdeals"
         )
     },
     "hi": {
         "voice": "hi-IN-MadhurNeural",
-        "font": "Poppins-Black",
-        "rate": "+6%",
+        "font": "DejaVu-Sans-Bold",
+        "rate": "+5%",
         "pitch": "+0Hz",
-        "hook": f"RUKO! SCROLL BAND KARO! 🚨\nCOMMENT '{TRIGGER_KEYWORD}'",
         "script": (
-            f"Rukiye dosto, ek second ke liye scroll band kijiye! Aaj ka sabse bada loot deal live ho chuka hai! "
-            f"{PRODUCT['title']} par pure {PRODUCT['discount']} ka heavy discount mil raha hai! "
-            f"{PRODUCT['mrp']} ka product abhi sale me sirf {PRODUCT['deal_price']} me mil raha hai! "
-            f"Stock limited hai, agar direct buy link chahiye, "
-            f"toh niche comment box me {TRIGGER_KEYWORD} comment kijiye! Instant DM link aa jayega!"
+            f"Dosto, check this out! Deal price sirf {PRODUCT['deal_price']} rupees! "
+            f"Ye koi normal watch nahi, massive offer chal raha hai! "
+            f"Market me iska actual price {PRODUCT['mrp']} hai, lekin abhi full discount! "
+            f"Display kafi bright hai, smooth performance aur solid build quality! "
+            f"Deal jaldi end hone wali hai! Abhi niche comment box me {TRIGGER_KEYWORD} comment kijiye, "
+            f"direct loot link turant aapke DM me aa jayega!"
         ),
         "caption": (
-            f"🚨 STOP SCROLLING! BIGGEST LOOT TODAY! 🚨\n\n"
-            f"⚡ {PRODUCT['title']}\n"
+            f"⚡ Guys, Check this out! Deal Price {PRODUCT['deal_price']} only!\n\n"
+            f"🔥 Product: {PRODUCT['title']}\n"
             f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
-            f"👉 Niche \"{TRIGGER_KEYWORD}\" comment karein! Instant link DM me aayega! 📩\n\n"
+            f"👉 Comment \"{TRIGGER_KEYWORD}\" below for direct link in your DM! 📩\n\n"
             f"⚠️ (Affiliate Disclosure: Paid partnership / As an affiliate partner, we earn from qualifying purchases.)\n\n"
-            f"#ad #affiliate #hindideals #techdeals #lootlootloot #amazonfinds #viralreels #explorepage #reelsindia"
+            f"#ad #affiliate #techdeals #smartwatch #amazonfinds #viralreels #explorepage #reelsindia"
         )
     },
     "en": {
         "voice": "en-IN-PrabhatNeural",
-        "font": "Poppins-Black",
-        "rate": "+8%",
+        "font": "DejaVu-Sans-Bold",
+        "rate": "+6%",
         "pitch": "+0Hz",
-        "hook": f"WAIT! STOP SCROLLING! 🚨\nCOMMENT '{TRIGGER_KEYWORD}'",
         "script": (
-            f"Hold on! Stop scrolling right now! You definitely don't want to miss this steal deal! "
-            f"The popular {PRODUCT['title']} is currently running at a massive {PRODUCT['discount']} discount! "
-            f"Original price is {PRODUCT['mrp']}, but right now it's up for just {PRODUCT['deal_price']}! "
-            f"Units are flying off the shelves super fast. "
-            f"Comment {TRIGGER_KEYWORD} right below to get the official verified link in your DM!"
+            f"Guys, check this out! Deal price is just {PRODUCT['deal_price']}! "
+            f"This is not a regular watch, this is an incredible deal! "
+            f"Actual price is {PRODUCT['mrp']}, but right now it is heavily discounted! "
+            f"The display is super bright, touch smoothness is great, and strap quality feels premium! "
+            f"Deal price ends soon! Comment {TRIGGER_KEYWORD} right below, "
+            f"and we will drop the direct official link straight to your inbox!"
         ),
         "caption": (
-            f"🚨 STOP SCROLLING! CRAZY PRICE DROP! 🚨\n\n"
-            f"⚡ {PRODUCT['title']}\n"
-            f"🏷️ Original Price: {PRODUCT['mrp']}\n"
-            f"💥 Steal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
-            f"👉 Comment \"{TRIGGER_KEYWORD}\" right below to get direct link in your DM! 📩\n\n"
-            f"⚠️️ (Affiliate Disclosure: As an affiliate partner, we earn from qualifying purchases at no extra cost to you.)\n\n"
-            f"#ad #affiliate #stealdeals #techtrends #amazonfinds #viral #explorepage #instareels #lootdeals"
+            f"⚡ Guys, Check this out! Deal Price {PRODUCT['deal_price']} only!\n\n"
+            f"🔥 Product: {PRODUCT['title']}\n"
+            f"🏷️ MRP: {PRODUCT['mrp']}\n"
+            f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
+            f"👉 Comment \"{TRIGGER_KEYWORD}\" below for the direct link! 📩\n\n"
+            f"⚠️ (Affiliate Disclosure: As an affiliate partner, we earn from qualifying purchases at no additional cost to you.)\n\n"
+            f"#ad #affiliate #stealdeals #techtrends #amazonfinds #viral #explorepage #instareels"
         )
     }
 }
 
-def fetch_pixabay_vertical_video(query, save_path):
-    print(f"Fetching free HD vertical clip from Pixabay for: {query}...")
+def download_file(url, save_path):
+    cmd = [
+        "curl", "-L", "-A",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "-o", save_path, url
+    ]
+    subprocess.run(cmd, check=True)
+
+def fetch_pixabay_video(query, save_path, fallback_url):
     video_url = None
     if PIXABAY_KEY:
         try:
@@ -118,110 +125,109 @@ def fetch_pixabay_vertical_video(query, save_path):
             hits = res.get("hits", [])
             if hits:
                 videos_obj = hits[0].get("videos", {})
-                for quality in ["large", "medium", "small"]:
-                    if quality in videos_obj and videos_obj[quality].get("url"):
-                        video_url = videos_obj[quality]["url"]
+                for q in ["large", "medium", "small"]:
+                    if q in videos_obj and videos_obj[q].get("url"):
+                        video_url = videos_obj[q]["url"]
                         break
         except Exception as e:
             print(f"Pixabay fetch error: {e}")
-
     if not video_url:
-        # Fallback reliable high quality tech clip
-        video_url = "https://assets.mixkit.co/videos/preview/mixkit-smartwatch-on-a-mans-wrist-touching-the-screen-41312-large.mp4"
+        video_url = fallback_url
+    download_file(video_url, save_path)
 
-    cmd = [
-        "curl", "-L", "-A",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "-o", save_path, video_url
-    ]
-    subprocess.run(cmd, check=True)
+def crop_to_vertical(clip):
+    w, h = clip.size
+    target_aspect = 1080 / 1920
+    if (w / h) > target_aspect:
+        new_w = int(h * target_aspect)
+        cropped = clip.crop(x1=(w - new_w)/2, x2=(w + new_w)/2, y1=0, y2=h)
+    else:
+        new_h = int(w / target_aspect)
+        cropped = clip.crop(y1=(h - new_h)/2, y2=(h + new_h)/2, x1=0, x2=w)
+    return cropped.resize((1080, 1920))
 
 async def generate_voiceover(text, voice_name, rate, pitch, output_path):
     communicate = edge_tts.Communicate(text, voice_name, rate=rate, pitch=pitch)
     await communicate.save(output_path)
 
-def build_cinematic_reel(lang, audio_path, raw_video_path, output_video):
+def build_pro_creator_reel(lang, audio_path, host_vid, broll_vid, output_video):
     cfg = LANG_CONFIG[lang]
     audio = AudioFileClip(audio_path)
-    duration = audio.duration
+    total_duration = audio.duration
+
+    # 1. Multi-Cut Architecture: Host Intro (0-3.5s) -> B-Roll Middle -> Host Outro (Last 5s)
+    intro_dur = min(3.5, total_duration * 0.25)
+    outro_dur = min(5.0, total_duration * 0.30)
+    broll_dur = max(1.0, total_duration - intro_dur - outro_dur)
 
     try:
-        source_clip = VideoFileClip(raw_video_path)
-        if source_clip.duration < duration:
-            loops_needed = int(duration / source_clip.duration) + 1
-            from moviepy.editor import concatenate_videoclips
-            source_clip = concatenate_videoclips([source_clip] * loops_needed)
-        source_clip = source_clip.subclip(0, duration)
-        
-        # 9:16 Vertical Smart Crop
-        w, h = source_clip.size
-        target_aspect = 1080 / 1920
-        if (w / h) > target_aspect:
-            new_w = int(h * target_aspect)
-            bg_video = source_clip.crop(x1=(w - new_w)/2, x2=(w + new_w)/2, y1=0, y2=h)
-        else:
-            new_h = int(w / target_aspect)
-            bg_video = source_clip.crop(y1=(h - new_h)/2, y2=(h + new_h)/2, x1=0, x2=w)
-        bg_video = bg_video.resize((1080, 1920))
+        host_clip = VideoFileClip(host_vid)
+        broll_clip = VideoFileClip(broll_vid)
+
+        if host_clip.duration < (intro_dur + outro_dur):
+            host_clip = concatenate_videoclips([host_clip] * 3)
+        if broll_clip.duration < broll_dur:
+            broll_clip = concatenate_videoclips([broll_clip] * 3)
+
+        clip_intro = crop_to_vertical(host_clip.subclip(0, intro_dur))
+        clip_broll = crop_to_vertical(broll_clip.subclip(0, broll_dur))
+        clip_outro = crop_to_vertical(host_clip.subclip(intro_dur, intro_dur + outro_dur))
+
+        merged_background = concatenate_videoclips([clip_intro, clip_broll, clip_outro]).set_duration(total_duration)
     except Exception as e:
-        print(f"Fallback canvas: {e}")
-        bg_video = ColorClip(size=(1080, 1920), color=(14, 16, 22), duration=duration)
+        print(f"Fallback video stitching: {e}")
+        merged_background = ColorClip(size=(1080, 1920), color=(18, 18, 22), duration=total_duration)
 
-    # Gradients for text contrast
-    top_vignette = ColorClip(size=(1080, 480), color=(0, 0, 0), duration=duration).set_opacity(0.45).set_position(('center', 0))
-    bottom_vignette = ColorClip(size=(1080, 680), color=(0, 0, 0), duration=duration).set_opacity(0.60).set_position(('center', 1240))
-
-    # Top Deal Badge Banner
-    badge_bg = ColorClip(size=(740, 110), color=(255, 10, 84), duration=duration).set_position(('center', 140))
-    badge_text = TextClip(
-        f"🔥 {PRODUCT.get('discount', 'LIMITED DEAL')} FLASH SALE 🔥",
-        fontsize=42,
+    # 2. Authentic Creator Minimal Overlays (Just like reference video)
+    # Price Tag Reveal (Appears during B-Roll section)
+    price_box_text = TextClip(
+        f"Actual price\n{PRODUCT.get('mrp', '₹1,999*!')}",
+        fontsize=64,
         color='white',
-        font='Poppins-Black',
-        size=(740, 110),
-        method='caption'
-    ).set_position(('center', 140)).set_duration(duration)
+        font='DejaVu-Sans-Bold',
+        stroke_color='black',
+        stroke_width=2,
+        align='center'
+    ).set_start(intro_dur + 0.2).set_duration(3.5).set_position(('center', 620))
 
-    # 3-5 Words Synced Captions (Alex Hormozi Style)
-    words = cfg["script"].split()
-    chunk_size = 4
-    word_chunks = [" ".join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size)]
-    chunk_duration = duration / max(len(word_chunks), 1)
+    deal_badge = TextClip(
+        f"DEAL: {PRODUCT.get('deal_price', '₹999')}",
+        fontsize=72,
+        color='#00FF66',
+        font='DejaVu-Sans-Bold',
+        stroke_color='black',
+        stroke_width=3,
+        align='center'
+    ).set_start(intro_dur + 3.8).set_duration(broll_dur - 3.8 if broll_dur > 4 else 2).set_position(('center', 620))
 
-    animated_caption_clips = []
-    for idx, chunk in enumerate(word_chunks):
-        st = idx * chunk_duration
-        cdur = min(chunk_duration, duration - st)
-        bg_card = ColorClip(size=(980, 160), color=(10, 12, 16), duration=cdur).set_opacity(0.85)
-        caption_txt = TextClip(
-            chunk,
-            fontsize=46,
-            color='#FFE600',
-            font=cfg["font"],
-            size=(940, 140),
-            method='caption'
-        ).set_duration(cdur)
-        chunk_composite = CompositeVideoClip([bg_card, caption_txt.set_position('center')], size=(980, 160))
-        chunk_composite = chunk_composite.set_start(st).set_position(('center', 1330))
-        animated_caption_clips.append(chunk_composite)
+    # Outro Clean Action Text (Minimal Creator Style)
+    cta_clean = TextClip(
+        f"COMMENT '{TRIGGER_KEYWORD}'\nFOR LINK",
+        fontsize=58,
+        color='white',
+        font='DejaVu-Sans-Bold',
+        stroke_color='black',
+        stroke_width=3,
+        align='center'
+    ).set_start(total_duration - outro_dur).set_duration(outro_dur).set_position(('center', 1450))
 
-    # CTA Action Bar
-    cta_bar = ColorClip(size=(1000, 120), color=(0, 122, 255), duration=duration).set_position(('center', 1660))
-    cta_text = TextClip(
-        f"👇 COMMENT '{TRIGGER_KEYWORD}' FOR DIRECT LINK 👇",
-        fontsize=38,
-        color='#FFFFFF',
-        font='Poppins-Black',
-        size=(980, 120),
-        method='caption'
-    ).set_position(('center', 1660)).set_duration(duration)
+    # Bottom Right Creator Channel Tag
+    handle_tag = TextClip(
+        "@LootDealsOfficial",
+        fontsize=32,
+        color='white',
+        font='DejaVu-Sans-Bold',
+        stroke_color='black',
+        stroke_width=2
+    ).set_duration(total_duration).set_position((720, 1820))
 
     final_video = CompositeVideoClip([
-        bg_video, top_vignette, bottom_vignette,
-        badge_bg, badge_text,
-        *animated_caption_clips,
-        cta_bar, cta_text
-    ], size=(1080, 1920)).set_duration(duration)
+        merged_background,
+        price_box_text,
+        deal_badge,
+        cta_clean,
+        handle_tag
+    ], size=(1080, 1920)).set_duration(total_duration)
 
     final_video = final_video.set_audio(audio)
     final_video.write_videofile(
@@ -266,22 +272,27 @@ def post_reel_to_meta(video_url, caption):
         "access_token": ACCESS_TOKEN
     }).json()
     
-    print("🎉 SUCCESS! Pro-Video Reel is Live! Post ID:", pub.get("id"))
+    print("🎉 SUCCESS! Pro-Creator Style Reel is Live! Post ID:", pub.get("id"))
 
 async def render_flow():
     with open("current_lang.txt", "w") as f:
         f.write(ACTIVE_LANG)
         
     audio_file = f"audio_{ACTIVE_LANG}.mp3"
-    raw_video = "source_video.mp4"
+    host_vid = "host_reviewer.mp4"
+    broll_vid = "product_broll.mp4"
     video_file = f"reel_{ACTIVE_LANG}.mp4"
 
-    search_query = PRODUCT.get("keyword", "gadget") + " technology"
-    fetch_pixabay_vertical_video(search_query, raw_video)
+    # High-quality verified reviewer human footage & product closeups
+    host_fallback = "https://assets.mixkit.co/videos/preview/mixkit-young-man-talking-to-camera-in-a-studio-42686-large.mp4"
+    broll_fallback = "https://assets.mixkit.co/videos/preview/mixkit-smartwatch-on-a-mans-wrist-touching-the-screen-41312-large.mp4"
+
+    fetch_pixabay_video("man tech presenter studio", host_vid, host_fallback)
+    fetch_pixabay_video(PRODUCT.get("keyword", "smartwatch") + " close up", broll_vid, broll_fallback)
     
     cfg = LANG_CONFIG[ACTIVE_LANG]
     await generate_voiceover(cfg["script"], cfg["voice"], cfg["rate"], cfg["pitch"], audio_file)
-    build_cinematic_reel(ACTIVE_LANG, audio_file, raw_video, video_file)
+    build_pro_creator_reel(ACTIVE_LANG, audio_file, host_vid, broll_vid, video_file)
 
 def publish_flow():
     with open("current_lang.txt", "r") as f:
