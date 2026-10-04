@@ -4,6 +4,7 @@ import time
 import json
 import subprocess
 import requests
+from PIL import Image, ImageDraw, ImageFilter
 
 IG_USER_ID = (os.getenv("IG_USER_ID") or "17841417494301577").strip()
 ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
@@ -14,7 +15,6 @@ with open("active_deal.json", "r", encoding="utf-8") as f:
 
 TRIGGER_KEYWORD = PRODUCT.get("keyword", "DEAL").upper()
 
-# Natural Tanglish script
 VOICE_SCRIPT = (
     "Brooo! Check this out! "
     f"Deal price వచ్చి కేవలం {PRODUCT.get('deal_price', '999 rupees')} మాత్రమే! "
@@ -63,12 +63,64 @@ def generate_natural_voice(output_path):
         print(f"Fallback edge-tts: {res.text}")
         subprocess.run(["edge-tts", "--voice", "te-IN-MohanNeural", "--text", VOICE_SCRIPT, "--write-media", output_path], check=True)
 
-def render_remotion_video():
-    generate_natural_voice("public/audio_te.mp3") if os.path.exists("public") else generate_natural_voice("audio_te.mp3")
-    print("Rendering Google-style video using Remotion...")
+def create_product_card_graphic(image_url, save_path):
+    raw_img = "raw_download.jpg"
+    try:
+        subprocess.run(["curl", "-L", "-A", "Mozilla/5.0", "-o", raw_img, image_url], check=True)
+        img = Image.open(raw_img).convert("RGBA")
+    except Exception as e:
+        img = Image.new("RGBA", (500, 500), (255, 255, 255, 255))
+
+    img.thumbnail((620, 620), Image.Resampling.LANCZOS)
+    
+    card_w, card_h = 760, 760
+    card = Image.new("RGBA", (card_w, card_h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(card)
+    
+    # White glossy card with neon border & rounded corners
+    draw.rounded_rectangle([0, 0, card_w, card_h], radius=44, fill=(255, 255, 255, 250), outline=(0, 255, 102, 255), width=8)
+    
+    # Center product in card
+    ox = (card_w - img.width) // 2
+    oy = (card_h - img.height) // 2
+    card.paste(img, (ox, oy), img)
+    card.save(save_path, "PNG")
+
+def render_motion_video():
     os.makedirs("out", exist_ok=True)
-    # Using npm script directly calls remotion with exact entrypoint config
-    subprocess.run(["npm", "run", "render"], check=True)
+    audio_file = "audio_te.mp3"
+    generate_natural_voice(audio_file)
+    
+    # Product card generation
+    card_img = "product_card.png"
+    img_url = PRODUCT.get("image_url") or "https://m.media-amazon.com/images/I/61SSVxTSs3L._SL1500_.jpg"
+    create_product_card_graphic(img_url, card_img)
+    
+    deal_price = PRODUCT.get('deal_price', '₹999').replace(":", "")
+    keyword = TRIGGER_KEYWORD
+    
+    print("Rendering Google-style motion graphics reel via FFmpeg...")
+    # Clean, professional animated video with smooth spring-like slide-up, glowing gradients, deal tag and CTA
+    ffmpeg_cmd = [
+        "ffmpeg", "-y",
+        "-f", "lavfi", "-i", "color=c=#0b0e14:s=1080x1920:d=16:r=30",
+        "-loop", "1", "-i", card_img,
+        "-i", audio_file,
+        "-filter_complex",
+        f"[1:v]scale=760:760[card];"
+        f"[0:v][card]overlay=x=160:y='if(lt(t,1.2), 1920, if(lt(t,2.2), 1920-(1920-380)*(sin((t-1.2)*1.5708)), 380))':shortest=1[v1];"
+        f"[v1]drawtext=text='DEAL: {deal_price}':fontcolor='#00FF66':fontsize=76:x=(w-text_w)/2:y=1220:box=1:boxcolor=black@0.6:boxborderw=18:enable='gte(t,2.0)'[v2];"
+        f"[v2]drawtext=text='COMMENT \"{keyword}\" FOR LINK':fontcolor=white:fontsize=56:x=(w-text_w)/2:y=1600:box=1:boxcolor=black@0.7:boxborderw=24[vout]",
+        "-map", "[vout]",
+        "-map", "2:a",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-preset", "fast",
+        "-shortest",
+        "out/reel_te.mp4"
+    ]
+    subprocess.run(ffmpeg_cmd, check=True)
+    print("Video rendered successfully!")
 
 def post_reel_to_meta(video_url):
     base_url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}"
@@ -101,7 +153,7 @@ def post_reel_to_meta(video_url):
 
 if __name__ == "__main__":
     if "--render-only" in sys.argv:
-        render_remotion_video()
+        render_motion_video()
     elif "--publish-only" in sys.argv:
         video_url = os.getenv("VIDEO_PUBLIC_URL")
         post_reel_to_meta(video_url)
