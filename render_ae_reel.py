@@ -24,37 +24,61 @@ TRIGGER_KEYWORD = PRODUCT.get("keyword", "DEAL").upper()
 
 VOICE_SCRIPTS = {
     "te": {
-        "voice_id": "pNInz6obpgDQGcFmaJgB", # High-energy natural conversational voice
+        "voice_id": "pNInz6obpgDQGcFmaJgB", # High Energy Natural Voice
         "script": (
-            f"Guys! Check this out! Deal price కేవలం {PRODUCT['deal_price']} మాత్రమే! "
-            f"ఇది నార్మల్ వాచ్ కాదు! యాక్చువల్ ప్రైస్ {PRODUCT['mrp']}, కానీ ఇవాళ క్రేజీ ప్రైస్ డ్రాప్! "
-            f"డిస్ప్లే చాలా బ్రైట్ గా ఉంది, టచ్ స్మూత్ గా ఉంది! "
-            f"డీల్ ప్రైస్ త్వరలోనే ఎండ్ అవుతుంది. కామెంట్స్ లో {TRIGGER_KEYWORD} అని టైప్ చేయండి, "
-            f"డైరెక్ట్ బై లింక్ మీ ఇన్ బాక్స్ కి వస్తుంది!"
+            f"Brooo! Check this out! Deal price కేవలం {PRODUCT['deal_price']} మాత్రమే! "
+            f"Wait wait wait, ఇది regular watch కాదు భయ్యా, crazy steal deal! "
+            f"మార్కెట్ లో {PRODUCT['mrp']} ఉండేది, ఇవాళ straight గా {PRODUCT['discount']} పడిపోయింది! "
+            f"Display super bright ఉంది, touch response insanely smooth! "
+            f"Look at that build quality! Deal price eppudaina end avvochu. "
+            f"Kindha comments lo {TRIGGER_KEYWORD} ani type cheyyandi, "
+            f"direct verified link instant ga mee DM ki vachesthundhi!"
         ),
         "caption": (
-            f"⚡ Guys, Check this out! Deal Price {PRODUCT['deal_price']} only!\n\n"
+            f"⚡ Bro, Check this out! Deal Price {PRODUCT['deal_price']} only!\n\n"
             f"🔥 Product: {PRODUCT['title']}\n"
-            f"🏷️ Actual Price: {PRODUCT['mrp']}\n"
+            f"🏷️ MRP: {PRODUCT['mrp']}\n"
             f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
             f"👉 Direct verified link kosam kindha \"{TRIGGER_KEYWORD}\" ani comment cheyyandi! Instant ga mee DM lo vasthundi! 📩\n\n"
-            f"#ad #affiliate #telugutech #smartwatch #amazonfinds #reelsindia"
+            f"⚠️ (Legal Affiliate Disclosure: As an Amazon Associate, we earn from qualifying purchases at no extra cost to you.)\n\n"
+            f"#ad #affiliate #telugutech #smartwatch #amazonfinds #reelsindia #lootdeals #techgadgets"
+        )
+    },
+    "hi": {
+        "voice_id": "pNInz6obpgDQGcFmaJgB",
+        "script": (
+            f"Bhai log! Check this out! Deal price sirf {PRODUCT['deal_price']} rupees! "
+            f"Ruko ruko ruko, ye koi normal watch nahi, crazy steal offer hai! "
+            f"Market price {PRODUCT['mrp']} tha, aaj seedha {PRODUCT['discount']} ka heavy discount! "
+            f"Display super bright hai, aur touch response butter smooth! "
+            f"Deal jaldi khatam ho sakti hai. Niche comments me {TRIGGER_KEYWORD} type kijiye, "
+            f"official direct loot link turant aapke DM me aa jayega!"
+        ),
+        "caption": (
+            f"⚡ Bhai log, Check this out! Deal Price {PRODUCT['deal_price']} only!\n\n"
+            f"🔥 Product: {PRODUCT['title']}\n"
+            f"🏷️️ MRP: {PRODUCT['mrp']}\n"
+            f"💥 Deal Price: {PRODUCT['deal_price']} ({PRODUCT['discount']})\n\n"
+            f"👉 Niche \"{TRIGGER_KEYWORD}\" comment kijiye! Instant DM link aa jayega! 📩\n\n"
+            f"#ad #affiliate #techdeals #smartwatch #amazonfinds #viralreels #explorepage"
         )
     },
     "en": {
         "voice_id": "pNInz6obpgDQGcFmaJgB",
         "script": (
-            f"Guys, check this out! Deal price is just {PRODUCT['deal_price']}! "
-            f"This is not a regular watch, original price is {PRODUCT['mrp']}, but right now it's heavily discounted! "
-            f"The display is super bright and touch is smooth! "
-            f"Deal ends soon! Comment {TRIGGER_KEYWORD} right below for the direct link!"
+            f"Bro, check this out right now! Deal price is just {PRODUCT['deal_price']}! "
+            f"Wait, this is not a regular watch, this is an absolute steal! "
+            f"Original price was {PRODUCT['mrp']}, but today we have a massive {PRODUCT['discount']} price drop! "
+            f"Super bright display and buttery smooth touch! "
+            f"Stocks are flying fast! Comment {TRIGGER_KEYWORD} right below, "
+            f"and I will drop the direct official link straight to your DM!"
         ),
-        "caption": f"Deal Alert: {PRODUCT['title']} at {PRODUCT['deal_price']}! Comment {TRIGGER_KEYWORD} for link."
+        "caption": f"⚡ Crazy Steal Deal: {PRODUCT['title']} at {PRODUCT['deal_price']}! Comment {TRIGGER_KEYWORD} for link."
     }
 }
 
 def generate_elevenlabs_voice(text, voice_id, output_path):
-    print("Generating ultra-human voice via ElevenLabs...")
+    print("Generating expressive conversational voice via ElevenLabs...")
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {
         "Accept": "audio/mpeg",
@@ -65,9 +89,9 @@ def generate_elevenlabs_voice(text, voice_id, output_path):
         "text": text,
         "model_id": "eleven_multilingual_v2",
         "voice_settings": {
-            "stability": 0.45,
-            "similarity_boost": 0.85,
-            "style": 0.35,
+            "stability": 0.30,          # Dynamic natural modulation (no robot voice)
+            "similarity_boost": 0.80,
+            "style": 0.55,             # High-energy creator expressiveness
             "use_speaker_boost": True
         }
     }
@@ -75,7 +99,7 @@ def generate_elevenlabs_voice(text, voice_id, output_path):
     if res.status_code == 200:
         with open(output_path, "wb") as f:
             f.write(res.content)
-        print("ElevenLabs voice generated successfully!")
+        print("Expressive voice generated successfully!")
     else:
         print(f"ElevenLabs error ({res.status_code}): {res.text}. Falling back to edge-tts.")
         subprocess.run(["edge-tts", "--voice", "te-IN-MohanNeural", "--text", text, "--write-media", output_path], check=True)
@@ -128,8 +152,8 @@ def build_pro_synced_reel(audio_path, host_vid, broll_vid, output_video):
     audio = AudioFileClip(audio_path)
     total_dur = audio.duration
 
-    intro_dur = min(3.2, total_dur * 0.25)
-    outro_dur = min(4.5, total_dur * 0.28)
+    intro_dur = min(3.5, total_dur * 0.25)
+    outro_dur = min(4.8, total_dur * 0.28)
     broll_dur = max(1.0, total_dur - intro_dur - outro_dur)
 
     try:
@@ -145,14 +169,13 @@ def build_pro_synced_reel(audio_path, host_vid, broll_vid, output_video):
         c3 = crop_to_vertical(host.subclip(intro_dur, intro_dur + outro_dur))
         merged_bg = concatenate_videoclips([c1, c2, c3]).set_duration(total_dur)
     except Exception as e:
-        print(f"Fallback bg: {e}")
+        print(f"Fallback canvas: {e}")
         merged_bg = ColorClip(size=(1080, 1920), color=(18, 18, 22), duration=total_dur)
 
     # Word-by-word synced kinetic subtitles
     word_data = get_word_timestamps(audio_path)
     caption_clips = []
     
-    # Group words into 3-word dynamic punches
     grouped = []
     for i in range(0, len(word_data), 3):
         group = word_data[i:i+3]
@@ -183,7 +206,7 @@ def build_pro_synced_reel(audio_path, host_vid, broll_vid, output_video):
         ).set_start(st).set_duration(dur).set_position(('center', 1350))
         caption_clips.append(txt)
 
-    # Price graphic matching creator style
+    # Price Graphic Overlay (Creator Style)
     price_tag = TextClip(
         f"Actual price\n{PRODUCT.get('mrp', '₹1,999*!')}",
         fontsize=64,
@@ -268,8 +291,9 @@ def render_flow():
 
     host_fb = "https://assets.mixkit.co/videos/preview/mixkit-young-man-talking-to-camera-in-a-studio-42686-large.mp4"
     broll_fb = "https://assets.mixkit.co/videos/preview/mixkit-smartwatch-on-a-mans-wrist-touching-the-screen-41312-large.mp4"
-    fetch_pixabay_video("man reviewer studio", host_vid, host_fb)
-    fetch_pixabay_video(PRODUCT.get("keyword", "smartwatch") + " close up", broll_vid, broll_fb)
+
+    fetch_pixabay_video("tech reviewer gadgets desk", host_vid, host_fb)
+    fetch_pixabay_video("smartwatch hands close up 4k", broll_vid, broll_fb)
 
     build_pro_synced_reel(audio_file, host_vid, broll_vid, video_file)
 
