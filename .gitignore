@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+public/reels/*.mp4
+public/audio/*.mp3
+public/cache/*
+*.log
