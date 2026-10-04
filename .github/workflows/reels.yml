@@ -38,6 +38,13 @@ jobs:
             elif [ "$H" = "07" ]; then echo "lang=hi" >> "$GITHUB_OUTPUT";
             else echo "lang=en" >> "$GITHUB_OUTPUT"; fi
           fi
+
+      - name: Fix all relative imports automatically
+        shell: bash
+        run: |
+          # Strip leading dot from imports across all python files automatically
+          sed -i 's/from \./from /g' *.py
+
       - name: Generate Reel
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -48,6 +55,7 @@ jobs:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_API_VERSION: ${{ secrets.IG_API_VERSION }}
         run: python main.py --language "${{ steps.lang.outputs.lang }}"
+
       - name: Upload generated reel as artifact
         uses: actions/upload-artifact@v4
         with:
