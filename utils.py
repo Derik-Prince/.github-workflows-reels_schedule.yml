@@ -1,21 +1,20 @@
-import json, os, re, subprocess
+import re
+import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+# Correct project root path
+ROOT = Path(__file__).resolve().parent
 PUBLIC = ROOT / "public"
-(PUBLIC / "reels").mkdir(parents=True, exist_ok=True)
-(PUBLIC / "audio").mkdir(parents=True, exist_ok=True)
-(PUBLIC / "cache").mkdir(parents=True, exist_ok=True)
+PUBLIC.mkdir(parents=True, exist_ok=True)
+
+def safe(name: str) -> str:
+    return re.sub(r'[^a-zA-Z0-9_\-]+', '_', name)
 
 def load_products():
-    with open(ROOT / "config" / "products.json", encoding="utf-8") as f:
+    # Direct ga config unte chusthundi, lekapothe root lo unna products.json load chesthundi
+    config_file = ROOT / "config" / "products.json"
+    if not config_file.exists():
+        config_file = ROOT / "products.json"
+        
+    with open(config_file, "r", encoding="utf-8") as f:
         return json.load(f)
-
-def run(cmd):
-    p = subprocess.run(cmd, text=True, capture_output=True)
-    if p.returncode:
-        raise RuntimeError(f"Command failed: {' '.join(cmd)}\n{p.stderr}")
-    return p.stdout
-
-def safe(s):
-    return re.sub(r"[^A-Za-z0-9_-]+", "_", str(s)).strip("_")[:80]
