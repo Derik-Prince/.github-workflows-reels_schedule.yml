@@ -39,10 +39,15 @@ jobs:
             else echo "lang=en" >> "$GITHUB_OUTPUT"; fi
           fi
 
-      - name: Fix all relative imports automatically
+      - name: Setup Config and Fix Relative Imports
         shell: bash
         run: |
-          # Strip leading dot from imports across all python files automatically
+          # Auto-create config directory and copy products.json if missing
+          mkdir -p config
+          if [ -f "products.json" ]; then
+            cp products.json config/products.json
+          fi
+          # Strip leading dot from imports across python files
           sed -i 's/from \./from /g' *.py
 
       - name: Generate Reel
