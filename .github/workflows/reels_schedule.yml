@@ -2,19 +2,8 @@ name: Scheduled Reels Auto Poster & DM Bot
 
 on:
   workflow_dispatch:
-    inputs:
-      target_lang:
-        description: 'Language (te, hi, en)'
-        required: true
-        default: 'te'
   schedule:
-    # 7:00 AM IST (Telugu Reel)
     - cron: '30 1 * * *'
-    # 1:00 PM IST (Hindi Reel)
-    - cron: '30 7 * * *'
-    # 5:00 PM IST (English Reel)
-    - cron: '30 11 * * *'
-    # Hourly DM Comment Trigger
     - cron: '0 * * * *'
 
 permissions:
@@ -27,53 +16,50 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg imagemagick curl jq
-          sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<!-- <policy domain="path" rights="none" pattern="@\*" -->/' /etc/ImageMagick-6/policy.xml || true
-          sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<!-- <policy domain="path" rights="none" pattern="@\*" -->/' /etc/ImageMagick-7/policy.xml || true
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install Python Packages
+      - name: Install System Dependencies
         run: |
-          pip install "moviepy<2.0.0" requests edge-tts pillow==9.5.0 beautifulsoup4 openai-whisper elevenlabs
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg curl jq
+
+      - name: Install Dependencies
+        run: |
+          npm install
+          pip install requests edge-tts beautifulsoup4
 
       - name: Auto-Discover and Select Trending Deal
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         run: |
           python auto_deal_engine.py
 
       - name: Render Reel and Audio
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         env:
-          TARGET_LANG: ${{ github.event.inputs.target_lang }}
-          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: |
           python render_ae_reel.py --render-only
 
       - name: Upload Video to GitHub Release CDN
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LANG=$(cat current_lang.txt)
-          VIDEO_FILE="reel_${LANG}.mp4"
+          VIDEO_FILE="out/reel_te.mp4"
           gh release delete v1.0-cache -y || true
           git tag -d v1.0-cache || true
           git push origin :refs/tags/v1.0-cache || true
           gh release create v1.0-cache "$VIDEO_FILE" --title "Reel Cache" --notes "Auto Reel Asset"
           REPO_NAME="${{ github.repository }}"
-          DOWNLOAD_URL="https://github.com/${REPO_NAME}/releases/download/v1.0-cache/${VIDEO_FILE}"
+          DOWNLOAD_URL="https://github.com/${REPO_NAME}/releases/download/v1.0-cache/reel_te.mp4"
           echo "PUBLIC_URL=${DOWNLOAD_URL}" >> $GITHUB_ENV
 
       - name: Publish Reel to Instagram
-        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 1 * * *' || github.event.schedule == '30 7 * * *' || github.event.schedule == '30 11 * * *'
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
