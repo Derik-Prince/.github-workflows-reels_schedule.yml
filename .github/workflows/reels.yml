@@ -60,30 +60,50 @@ jobs:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: python main.py --language "${{ steps.lang.outputs.lang }}"
 
-      - name: Upload Video to GitHub CDN & Publish to Instagram
+      - name: Upload Video to GitHub Release CDN & Publish to Instagram
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           PUBLISH_INSTAGRAM: "true"
         run: |
-          # Find generated mp4 video file
           VIDEO_PATH=$(ls public/reels/*.mp4 | head -n 1)
           VIDEO_NAME=$(basename "$VIDEO_PATH")
-          echo "Found video: $VIDEO_PATH"
+          echo "Found video: $VIDEO_PATH ($VIDEO_NAME)"
 
-          # Upload to GitHub Release for public CDN access
+          # Upload to GitHub Release
           gh release delete v1.0-cache -y || true
           git tag -d v1.0-cache || true
           git push origin :refs/tags/v1.0-cache || true
           gh release create v1.0-cache "$VIDEO_PATH" --title "Reel CDN" --notes "Auto Reel Asset"
           
+          # Exact Direct CDN Link without duplicate /reels/ path
           REPO_NAME="${{ github.repository }}"
-          export PUBLIC_BASE_URL="https://github.com/${REPO_NAME}/releases/download/v1.0-cache"
-          echo "Public CDN Base URL: $PUBLIC_BASE_URL"
+          DIRECT_URL="https://github.com/${REPO_NAME}/releases/download/v1.0-cache/${VIDEO_NAME}"
+          echo "Direct CDN URL: $DIRECT_URL"
 
-          # Run publish with explicit flag
-          python main.py --language "${{ steps.lang.outputs.lang }}" --publish
+          # Extract base URL so main.py: url=base+"/reels/"+out.name resolves correctly
+          BASE_URL="https://github.com/${REPO_NAME}/releases/download/v1.0-cache"
+          # Trim trailing part to prevent double /reels/
+          export PUBLIC_BASE_URL=$(echo "$BASE_URL" | sed 's/\/reels$//')
+          
+          # Publish using direct python invocation
+          python -c "
+          import os, json
+          from utils import safe, PUBLIC
+          from instagram import publish
+          from deal_engine import select
+
+          lang = '${{ steps.lang.outputs.lang }}'
+          product = select(lang)
+          work = PUBLIC / 'cache' / safe(product['id'] + '_' + lang)
+          plan = json.loads((work / 'plan.json').read_text(encoding='utf-8'))
+          caption = f\"{plan['hook']}\n\n🔥 {product['currency']}{product['current_price']:,} | {product.get('discount_percent',0)}% OFF\n\nComment {product['keyword']} for link.\n\n#deals #offers #shopping #reels\"
+          
+          print('Publishing directly to Meta:', '$DIRECT_URL')
+          res = publish('$DIRECT_URL', caption)
+          print('Publish Response:', res)
+          "
 
       - name: Upload generated reel as artifact
         uses: actions/upload-artifact@v4
