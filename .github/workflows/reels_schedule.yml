@@ -16,32 +16,22 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install System Dependencies
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg curl jq
-
-      - name: Install Node & Python Dependencies
-        run: |
-          npm install
-          npx puppeteer browsers install chrome || true
-          pip install requests edge-tts beautifulsoup4
+          sudo apt-get install -y ffmpeg curl jq fonts-dejavu-core
+          pip install requests edge-tts beautifulsoup4 pillow
 
       - name: Auto-Discover and Select Trending Deal
         run: |
           python auto_deal_engine.py
 
-      - name: Render Reel and Audio
+      - name: Render Google-Style Reel and Audio
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: |
