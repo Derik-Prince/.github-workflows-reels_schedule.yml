@@ -26,15 +26,15 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install System Dependencies for Video & Chromium
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg curl jq libnss3 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libgbm1 libasound2
+          sudo apt-get install -y ffmpeg curl jq
 
       - name: Install Node & Python Dependencies
         run: |
           npm install
-          npx remotion browser ensure
+          npx puppeteer browsers install chrome || true
           pip install requests edge-tts beautifulsoup4
 
       - name: Auto-Discover and Select Trending Deal
