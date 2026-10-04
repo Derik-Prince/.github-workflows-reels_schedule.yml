@@ -14,7 +14,7 @@ with open("active_deal.json", "r", encoding="utf-8") as f:
 
 TRIGGER_KEYWORD = PRODUCT.get("keyword", "DEAL").upper()
 
-# Natural Tanglish script without confusing pronunciation symbols
+# Natural Tanglish script (numbers read naturally)
 VOICE_SCRIPT = (
     "Brooo! Check this out! "
     f"Deal price వచ్చి కేవలం {PRODUCT.get('deal_price', '999 rupees')} మాత్రమే! "
@@ -64,10 +64,12 @@ def generate_natural_voice(output_path):
         subprocess.run(["edge-tts", "--voice", "te-IN-MohanNeural", "--text", VOICE_SCRIPT, "--write-media", output_path], check=True)
 
 def render_remotion_video():
-    generate_natural_voice("audio_te.mp3")
+    generate_natural_voice("public/audio_te.mp3") if os.path.exists("public") else generate_natural_voice("audio_te.mp3")
     print("Rendering Google-style video using Remotion...")
     os.makedirs("out", exist_ok=True)
-    subprocess.run(["npx", "remotion", "render", "src/index.ts", "ReelComposition", "out/reel_te.mp4"], check=True)
+    # Direct shell execution prevents npx argument swallowing
+    cmd = "npx remotion render src/index.ts ReelComposition out/reel_te.mp4"
+    subprocess.run(cmd, shell=True, check=True)
 
 def post_reel_to_meta(video_url):
     base_url = f"https://graph.facebook.com/v26.0/{IG_USER_ID}"
